@@ -179,7 +179,7 @@ func (s *Service) Image(task types.AiDrawTask) (string, error) {
 	}
 
 	var imgURL string
-	if strings.Contains(chatModel.Value, "gemini") {
+	if strings.Contains(apiKey.ApiURL, "googleapis.com") {
 		imgURL, err = s.callGemini(task, apiKey, chatModel)
 	} else {
 		imgURL, err = s.callGPTImage(task, apiKey, chatModel)
