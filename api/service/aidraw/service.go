@@ -206,6 +206,7 @@ func (s *Service) Image(task types.AiDrawTask) (string, error) {
 		"prompt":   task.Prompt,
 		"img_url":  ossURL,
 		"org_url":  ossURL,
+		"publish":  1,
 	}).Error
 	if err != nil {
 		return "", fmt.Errorf("err with update database: %v", err)

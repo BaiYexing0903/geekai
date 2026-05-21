@@ -372,14 +372,14 @@ const getNext = () => {
       for (let i = 0; i < imageList.length; i++) {
         imageList[i]['img_thumb'] = imageList[i]['img_url'] + '?imageView2/4/w/300/h/0/q/75'
       }
+      if (imageList.length < pageSize.value) {
+        isOver.value = true
+      }
       if (data.value[imgType.value].length === 0) {
         data.value[imgType.value] = imageList
         return
       }
 
-      if (imageList.length < pageSize.value) {
-        isOver.value = true
-      }
       data.value[imgType.value] = data.value[imgType.value].concat(imageList)
     })
     .catch((e) => {
