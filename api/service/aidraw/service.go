@@ -189,6 +189,9 @@ func (s *Service) Image(task types.AiDrawTask) (string, error) {
 		return "", err
 	}
 
+	// clean base64 data: remove data URI prefix, fix URL-safe chars, strip whitespace
+	imgURL = cleanBase64(imgURL)
+
 	// update api key last use time
 	s.db.Model(&apiKey).UpdateColumn("last_used_at", time.Now().Unix())
 
@@ -477,4 +480,26 @@ func (s *Service) downloadImageAsBase64(imgURL string) (string, string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(imageBytes), mimeType, nil
+}
+
+func cleanBase64(data string) string {
+	// remove data URI prefix like "data:image/png;base64,"
+	if idx := strings.Index(data, ","); idx >= 0 && strings.HasPrefix(data, "data:") {
+		data = data[idx+1:]
+	}
+	// fix URL-safe base64: replace - with + and _ with /
+	data = strings.ReplaceAll(data, "-", "+")
+	data = strings.ReplaceAll(data, "_", "/")
+	// strip whitespace
+	data = strings.Map(func(r rune) rune {
+		if r == ' ' || r == '\n' || r == '\r' || r == '\t' {
+			return -1
+		}
+		return r
+	}, data)
+	// fix padding
+	if m := len(data) % 4; m > 0 {
+		data += strings.Repeat("=", 4-m)
+	}
+	return data
 }
