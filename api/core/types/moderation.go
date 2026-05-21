@@ -70,5 +70,6 @@ const (
 	ModerationSourceSuno   = "suno"
 	ModerationSourceVideo  = "video"
 	ModerationSourceJiMeng = "jimeng"
-	ModerationSourceAiDraw = "aidraw"
+	ModerationSourceAiDraw  = "aidraw"
+	ModerationSourceSeedance = "seedance"
 )

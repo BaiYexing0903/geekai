@@ -107,6 +107,7 @@ type SystemConfig struct {
 	Captcha    CaptchaConfig
 	WxLogin    WxLoginConfig
 	Jimeng     JimengConfig
+	Seedance   SeedanceConfig
 	License    License
 	Moderation ModerationConfig
 }
@@ -128,4 +129,5 @@ const (
 	ConfigKeyModeration = "moderation"
 	ConfigKeyAI3D       = "ai3d"
 	ConfigKeyJimeng     = "jimeng"
+	ConfigKeySeedance   = "seedance"
 )

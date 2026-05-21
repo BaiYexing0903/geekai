@@ -121,6 +121,12 @@ const routes = [
         meta: { title: '即梦AI' },
         component: () => import('@/views/Jimeng.vue'),
       },
+      {
+        name: 'seedance',
+        path: '/seedance',
+        meta: { title: 'Seedance视频生成' },
+        component: () => import('@/views/Seedance.vue'),
+      },
     ],
   },
   {
@@ -349,6 +355,18 @@ const routes = [
         component: () => import('@/views/admin/jimeng/JimengConfig.vue'),
       },
       {
+        path: '/admin/seedance/jobs',
+        name: 'admin-seedance-jobs',
+        meta: { title: 'Seedance任务' },
+        component: () => import('@/views/admin/seedance/SeedanceJobs.vue'),
+      },
+      {
+        path: '/admin/seedance/config',
+        name: 'admin-seedance-config',
+        meta: { title: 'Seedance设置' },
+        component: () => import('@/views/admin/seedance/SeedanceConfig.vue'),
+      },
+      {
         path: '/admin/powerLog',
         name: 'admin-power-log',
         meta: { title: '算力日志' },
@@ -459,6 +477,12 @@ const routes = [
         path: '/mobile/jimeng',
         name: 'mobile-jimeng',
         component: () => import('@/views/mobile/JimengCreate.vue'),
+      },
+      {
+        meta: { title: 'Seedance视频' },
+        path: '/mobile/seedance',
+        name: 'mobile-seedance',
+        component: () => import('@/views/mobile/SeedanceCreate.vue'),
       },
       {
         meta: { title: 'AI智能绘画' },

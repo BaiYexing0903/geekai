@@ -26,6 +26,7 @@ import (
 	"geekai/service/sd"
 	"geekai/service/sms"
 	"geekai/service/suno"
+	"geekai/service/seedance"
 	"geekai/service/video"
 	"geekai/store"
 	"io"
@@ -145,6 +146,7 @@ func main() {
 		fx.Provide(handler.NewConfigHandler),
 		fx.Provide(handler.NewPowerLogHandler),
 		fx.Provide(handler.NewJimengHandler),
+		fx.Provide(handler.NewSeedanceHandler),
 
 		fx.Provide(service.NewMigrationService),
 		fx.Invoke(func(migrationService *service.MigrationService) {
@@ -164,6 +166,7 @@ func main() {
 		fx.Provide(admin.NewOrderHandler),
 		fx.Provide(admin.NewPowerLogHandler),
 		fx.Provide(admin.NewAdminJimengHandler),
+		fx.Provide(admin.NewSeedanceHandler),
 
 		// 邮件服务
 		fx.Provide(service.NewSmtpService),
@@ -219,6 +222,13 @@ func main() {
 		fx.Provide(jimeng.NewService),
 		fx.Invoke(func(service *jimeng.Service) {
 			service.Start()
+		}),
+
+		// Seedance 视频生成服务
+		fx.Provide(seedance.NewClient),
+		fx.Provide(seedance.NewService),
+		fx.Invoke(func(s *seedance.Service) {
+			s.Start()
 		}),
 
 		fx.Provide(service.NewSnowflake),
@@ -399,6 +409,14 @@ func main() {
 			h.RegisterRoutes()
 		}),
 		fx.Invoke(func(s *core.AppServer, h *admin.AdminJimengHandler) {
+			h.RegisterRoutes()
+		}),
+
+		// Seedance 视频生成路由
+		fx.Invoke(func(s *core.AppServer, h *handler.SeedanceHandler) {
+			h.RegisterRoutes()
+		}),
+		fx.Invoke(func(s *core.AppServer, h *admin.SeedanceHandler) {
 			h.RegisterRoutes()
 		}),
 		fx.Provide(admin.NewChatAppTypeHandler),

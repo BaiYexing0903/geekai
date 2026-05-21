@@ -166,6 +166,15 @@ func LoadSystemConfig(db *gorm.DB) *types.SystemConfig {
 		logger.Error("load jimeng config error: ", err)
 	}
 
+	// 加载Seedance视频生成配置
+	var seedanceConfig types.SeedanceConfig
+	sysConfig.Id = 0
+	db.Where("name", types.ConfigKeySeedance).First(&sysConfig)
+	err = utils.JsonDecode(sysConfig.Value, &seedanceConfig)
+	if err != nil {
+		logger.Error("load seedance config error: ", err)
+	}
+
 	return &types.SystemConfig{
 		Base:       baseConfig,
 		License:    license,
@@ -177,5 +186,6 @@ func LoadSystemConfig(db *gorm.DB) *types.SystemConfig {
 		WxLogin:    wxLoginConfig,
 		Moderation: moderationConfig,
 		Jimeng:     jimengConfig,
+		Seedance:   seedanceConfig,
 	}
 }

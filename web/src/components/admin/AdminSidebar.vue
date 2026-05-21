@@ -179,6 +179,23 @@ const items = [
       },
     ],
   },
+  {
+    icon: 'video',
+    index: '/admin/seedance',
+    title: 'Seedance视频',
+    subs: [
+      {
+        icon: 'list',
+        index: '/admin/seedance/jobs',
+        title: '任务列表',
+      },
+      {
+        icon: 'config',
+        index: '/admin/seedance/config',
+        title: 'Seedance设置',
+      },
+    ],
+  },
 
   {
     icon: 'moderation',
