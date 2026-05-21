@@ -1,0 +1,42 @@
+# Logs
+logs
+*.log
+
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+deploy/data
+deploy/log
+deploy/static
+
+docker/data
+docker/log
+docker/static
+
+# Config with secrets
+config.toml
+config/config.yaml
+
+# Dependencies
+web/node_modules/
+api/vendor/
+
+# Build output
+web/dist/
+api/bin/
+
+# OS files
+Thumbs.db
+
+# Claude Code
+.claude/

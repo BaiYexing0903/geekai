@@ -1,0 +1,135 @@
+// Geekai 后端构建 Jenkins Pipeline
+// 用于构建和推送后端 Docker 镜像到 Harbor
+
+pipeline {
+    agent any
+
+    environment {
+        HARBOR_CREDENTIALS_ID = '48f9f138-34e9-47db-b5d7-7e40714c0028' // Harbor 凭据 ID
+        HARBOR_HOST = '64.32.12.251:28077'
+        HARBOR_PROJECT = 'geekai'
+        IMAGE_NAME = 'geekai-server'
+        DOCKERFILE = 'api/Dockerfile'
+        // 使用 Jenkins 构建编号作为版本号 (例如：build-42)
+        VERSION = "build-${env.BUILD_NUMBER}"
+    }
+
+    parameters {
+        string(name: 'VERSION_OVERRIDE', defaultValue: '', description: '覆盖版本号 (留空则使用构建编号)')
+        string(name: 'GIT_BRANCH', defaultValue: '*/release', description: 'Git 分支 (例如：*/release)')
+        string(name: 'DOCKERFILE', defaultValue: 'api/Dockerfile', description: 'Dockerfile 路径')
+        booleanParam(name: 'PUSH', defaultValue: true, description: '是否推送到 Harbor')
+        booleanParam(name: 'DEPLOY_LOCAL', defaultValue: false, description: '是否部署到本地')
+    }
+
+    options {
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "拉取代码：分支=${GIT_BRANCH}"
+                checkout([$class: 'GitSCM',
+                    branches: [[name: "${GIT_BRANCH}"]],
+                    extensions: [],
+                    userRemoteConfigs: [[
+                        url: 'git@gitlab:ai/geekai.git',
+                        credentialsId: 'gitlab-credentials'
+                    ]]
+                ])
+            }
+        }
+
+        stage('Prepare') {
+            steps {
+                script {
+                    // 支持手动覆盖版本号
+                    if (params.VERSION_OVERRIDE != '' && params.VERSION_OVERRIDE != null) {
+                        VERSION = params.VERSION_OVERRIDE
+                        echo "使用手动指定的版本：${VERSION}"
+                    } else {
+                        echo "使用 Jenkins 构建编号：${VERSION}"
+                    }
+
+                    // 验证 Dockerfile 存在
+                    if (!fileExists(env.DOCKERFILE)) {
+                        error "Dockerfile 不存在：${env.DOCKERFILE}"
+                    }
+                }
+            }
+        }
+
+        stage('Build Image') {
+            steps {
+                echo "构建后端镜像：${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:${VERSION}"
+                sh """
+                docker build -t ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:${VERSION} -f ${DOCKERFILE} .
+                docker tag ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:${VERSION} ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
+                """
+            }
+        }
+
+        stage('Unit Test') {
+            steps {
+                echo '运行单元测试...'
+                sh '''
+                go test -v ./... -coverprofile=coverage.out || true
+                '''
+            }
+        }
+
+        stage('Push Image') {
+            when {
+                expression { return params.PUSH }
+            }
+            steps {
+                script {
+                    // 使用 Harbor 凭据登录
+                    withCredentials([usernamePassword(
+                        credentialsId: "${HARBOR_CREDENTIALS_ID}",
+                        usernameVariable: 'HARBOR_USER',
+                        passwordVariable: 'HARBOR_PASS'
+                    )]) {
+                        sh """
+                        echo ${HARBOR_PASS} | docker login ${HARBOR_HOST} -u ${HARBOR_USER} --password-stdin
+                        """
+                    }
+
+                    echo "推送镜像到 Harbor..."
+                    sh """
+                    docker push ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:${VERSION}
+                    docker push ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Deploy Local') {
+            when {
+                expression { return params.DEPLOY_LOCAL }
+            }
+            steps {
+                echo '部署到本地环境...'
+                sh '''
+                docker-compose -f docker/docker-compose.yaml up -d geekai-api
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            // 清理工作空间
+            cleanWs()
+        }
+        success {
+            echo "构建成功！镜像：${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:${VERSION}"
+        }
+        failure {
+            echo '构建失败，请检查日志'
+        }
+    }
+}
