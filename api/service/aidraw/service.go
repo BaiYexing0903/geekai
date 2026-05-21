@@ -179,7 +179,7 @@ func (s *Service) Image(task types.AiDrawTask) (string, error) {
 	}
 
 	var imgURL string
-	if strings.Contains(apiKey.ApiURL, "googleapis.com") {
+	if strings.Contains(chatModel.Value, "gemini") {
 		imgURL, err = s.callGemini(task, apiKey, chatModel)
 	} else {
 		imgURL, err = s.callGPTImage(task, apiKey, chatModel)
@@ -252,19 +252,23 @@ func (s *Service) callGemini(task types.AiDrawTask, apiKey model.ApiKey, chatMod
 	}
 
 	var res geminiRes
-	var errResp errRes
 	r, err := s.httpClient.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("x-goog-api-key", apiKey.Value).
 		SetBody(reqBody).
-		SetErrorResult(&errResp).
 		SetSuccessResult(&res).
 		Post(apiURL)
 	if err != nil {
 		return "", fmt.Errorf("gemini request failed: %v", err)
 	}
 	if r.IsErrorState() {
-		return "", fmt.Errorf("gemini API error: %s", errResp.Error.Message)
+		body := r.String()
+		logger.Errorf("gemini API error response: %s", body)
+		var errResp errRes
+		if json.Unmarshal([]byte(body), &errResp) == nil && errResp.Error.Message != "" {
+			return "", fmt.Errorf("gemini API error: %s", errResp.Error.Message)
+		}
+		return "", fmt.Errorf("gemini API error (status %d): %s", r.StatusCode, body)
 	}
 
 	if len(res.Candidates) == 0 || len(res.Candidates[0].Content.Parts) == 0 {
