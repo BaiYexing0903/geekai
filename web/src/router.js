@@ -87,6 +87,12 @@ const routes = [
         component: () => import('@/views/Dalle.vue'),
       },
       {
+        name: 'aidraw',
+        path: '/aidraw',
+        meta: { title: 'AI智能绘画' },
+        component: () => import('@/views/AiDraw.vue'),
+      },
+      {
         name: 'suno',
         path: '/suno',
         meta: { title: 'Suno音乐创作' },
@@ -453,6 +459,12 @@ const routes = [
         path: '/mobile/jimeng',
         name: 'mobile-jimeng',
         component: () => import('@/views/mobile/JimengCreate.vue'),
+      },
+      {
+        meta: { title: 'AI智能绘画' },
+        path: '/mobile/aidraw',
+        name: 'mobile-aidraw',
+        component: () => import('@/views/mobile/pages/ImageAiDraw.vue'),
       },
     ],
   },

@@ -10,6 +10,9 @@
       <CustomTabPane name="dall" label="DALL" v-if="activeMenu.dall">
         <image-dall />
       </CustomTabPane>
+      <CustomTabPane name="aidraw" label="AI绘画" v-if="activeMenu.aidraw">
+        <image-aidraw />
+      </CustomTabPane>
     </CustomTabs>
   </div>
 </template>
@@ -21,6 +24,7 @@ import { httpGet } from '@/utils/http'
 import ImageDall from '@/views/mobile/pages/ImageDall.vue'
 import ImageMj from '@/views/mobile/pages/ImageMj.vue'
 import ImageSd from '@/views/mobile/pages/ImageSd.vue'
+import ImageAiDraw from '@/views/mobile/pages/ImageAiDraw.vue'
 import { onMounted, ref } from 'vue'
 
 const activeName = ref('')
@@ -29,6 +33,7 @@ const activeMenu = ref({
   mj: false,
   sd: false,
   dall: false,
+  aidraw: false,
 })
 
 onMounted(() => {
@@ -38,6 +43,7 @@ onMounted(() => {
       mj: menus.value.some((item) => item.url === '/mj'),
       sd: menus.value.some((item) => item.url === '/sd'),
       dall: menus.value.some((item) => item.url === '/dalle'),
+      aidraw: menus.value.some((item) => item.url === '/aidraw'),
     }
   })
 })

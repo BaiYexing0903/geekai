@@ -14,6 +14,7 @@
             <el-radio-button value="dall"
               ><i class="iconfont icon-dalle mr-1"></i>Dalle</el-radio-button
             >
+            <el-radio-button value="aidraw">AI绘画</el-radio-button>
           </el-radio-group>
         </div>
       </div>
@@ -198,6 +199,62 @@
           </template>
         </Waterfall>
 
+        <Waterfall
+          v-if="imgType === 'aidraw'"
+          id="waterfall-aidraw"
+          :list="data['aidraw']"
+          :row-key="waterfallOptions.rowKey"
+          :gutter="waterfallOptions.gutter"
+          :has-around-gutter="waterfallOptions.hasAroundGutter"
+          :width="waterfallOptions.width"
+          :breakpoints="waterfallOptions.breakpoints"
+          :img-selector="waterfallOptions.imgSelector"
+          :background-color="waterfallOptions.backgroundColor"
+          :animation-effect="waterfallOptions.animationEffect"
+          :animation-duration="waterfallOptions.animationDuration"
+          :animation-delay="waterfallOptions.animationDelay"
+          :animation-cancel="waterfallOptions.animationCancel"
+          :lazyload="waterfallOptions.lazyload"
+          :load-props="waterfallOptions.loadProps"
+          :cross-origin="waterfallOptions.crossOrigin"
+          :align="waterfallOptions.align"
+          :is-loading="loading"
+          :is-over="isOver"
+          @afterRender="loading = false"
+        >
+          <template #default="{ item, url }">
+            <div
+              class="bg-gray-900 rounded-lg shadow-md overflow-hidden transition-all duration-300 ease-linear hover:shadow-md hover:shadow-purple-800 group"
+            >
+              <div class="overflow-hidden rounded-lg">
+                <LazyImg
+                  :url="url"
+                  class="cursor-pointer transition-all duration-300 ease-linear group-hover:scale-105"
+                  @click="previewImg(item)"
+                />
+              </div>
+              <div class="px-4 pt-2 pb-4 border-t border-t-gray-800">
+                <div
+                  class="pt-3 flex justify-center items-center border-t border-t-gray-600 border-opacity-50"
+                >
+                  <div class="opt">
+                    <el-tooltip class="box-item" content="复制提示词" placement="top">
+                      <el-button
+                        type="info"
+                        circle
+                        class="copy-prompt-wall"
+                        :data-clipboard-text="item.prompt"
+                      >
+                        <i class="iconfont icon-file"></i>
+                      </el-button>
+                    </el-tooltip>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </Waterfall>
+
         <div class="flex flex-col items-center justify-center py-10">
           <img
             :src="waterfallOptions.loadProps.loading"
@@ -263,6 +320,7 @@ const data = ref({
   mj: [],
   sd: [],
   dall: [],
+  aidraw: [],
 })
 const loading = ref(true)
 const isOver = ref(false)
@@ -296,6 +354,9 @@ const getNext = () => {
       break
     case 'dall':
       url = '/api/dall/imgWall'
+      break
+    case 'aidraw':
+      url = '/api/aidraw/imgWall'
       break
   }
   httpGet(`${url}?page=${page.value}&page_size=${pageSize.value}`)

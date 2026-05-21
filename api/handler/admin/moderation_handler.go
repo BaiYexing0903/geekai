@@ -231,6 +231,10 @@ func (h *ModerationHandler) GetSourceList(c *gin.Context) {
 			"id":   types.ModerationSourceJiMeng,
 			"name": "即梦AI",
 		},
+		{
+			"id":   types.ModerationSourceAiDraw,
+			"name": "AI智能绘画",
+		},
 	}
 
 	resp.SUCCESS(c, sources)

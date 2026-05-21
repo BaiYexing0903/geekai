@@ -127,6 +127,7 @@ func (s *MigrationService) MigrateConfigContent() error {
 func (s *MigrationService) TableMigration() {
 	// 新数据表
 	s.db.AutoMigrate(&model.Moderation{})
+	s.db.AutoMigrate(&model.AiDrawJob{})
 
 	// 订单字段整理
 	if s.db.Migrator().HasColumn(&model.Order{}, "pay_type") {

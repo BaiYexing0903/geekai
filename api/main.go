@@ -16,6 +16,7 @@ import (
 	"geekai/handler/admin"
 	logger2 "geekai/logger"
 	"geekai/service"
+	"geekai/service/aidraw"
 	"geekai/service/dalle"
 	"geekai/service/jimeng"
 	"geekai/service/mj"
@@ -171,6 +172,14 @@ func main() {
 		// Dalle 服务
 		fx.Provide(dalle.NewService),
 		fx.Invoke(func(s *dalle.Service) {
+			s.Run()
+			s.DownloadImages()
+			s.CheckTaskStatus()
+		}),
+
+		// AiDraw 智能绘画服务
+		fx.Provide(aidraw.NewService),
+		fx.Invoke(func(s *aidraw.Service) {
 			s.Run()
 			s.DownloadImages()
 			s.CheckTaskStatus()
@@ -370,6 +379,10 @@ func main() {
 		}),
 		fx.Provide(handler.NewDallJobHandler),
 		fx.Invoke(func(s *core.AppServer, h *handler.DallJobHandler) {
+			h.RegisterRoutes()
+		}),
+		fx.Provide(handler.NewAiDrawHandler),
+		fx.Invoke(func(s *core.AppServer, h *handler.AiDrawHandler) {
 			h.RegisterRoutes()
 		}),
 		fx.Provide(handler.NewSunoHandler),

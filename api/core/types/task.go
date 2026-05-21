@@ -84,6 +84,23 @@ type DallTask struct {
 	TranslateModelId int      `json:"translate_model_id"` // 提示词翻译模型ID
 }
 
+// AiDrawTask AI智能绘画任务
+type AiDrawTask struct {
+	Id               uint     `json:"id"`
+	UserId           uint     `json:"user_id"`
+	ModelId          uint     `json:"model_id"`
+	ModelName        string   `json:"model_name"`
+	Mode             string   `json:"mode"`              // text_to_image 或 image_to_image
+	Prompt           string   `json:"prompt"`
+	Images           []string `json:"images,omitempty"`  // 图生图参考图片URL
+	AspectRatio      string   `json:"aspect_ratio"`      // Gemini 宽高比
+	ImageSize        string   `json:"image_size"`        // Gemini 分辨率
+	Quality          string   `json:"quality"`           // GPT-Image-2 质量
+	Size             string   `json:"size"`              // GPT-Image-2 尺寸
+	Power            int      `json:"power"`
+	TranslateModelId int      `json:"translate_model_id"`
+}
+
 type SunoTask struct {
 	Id           uint   `json:"id"`
 	Channel      string `json:"channel"`
