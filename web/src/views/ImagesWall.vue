@@ -414,6 +414,7 @@ const changeImgType = () => {
     mj: [],
     sd: [],
     dall: [],
+    aidraw: [],
   }
   loading.value = true
   isOver.value = false
