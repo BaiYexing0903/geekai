@@ -209,6 +209,7 @@ func (h *AiDrawHandler) getData(finish bool, userId uint, page int, pageSize int
 		if err != nil {
 			continue
 		}
+		job.CreatedAt = item.CreatedAt.Unix()
 		jobs = append(jobs, job)
 	}
 
