@@ -1,5 +1,5 @@
 <template>
-  <div class="image-upload">
+  <div ref="rootRef" class="image-upload" @paste="handlePaste" tabindex="0">
     <!-- 单图模式 -->
     <template v-if="props.maxCount === 1">
       <div class="single-upload">
@@ -108,7 +108,7 @@ import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 import { Delete, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -130,6 +130,7 @@ const emit = defineEmits(['update:modelValue', 'upload-success'])
 // 上传状态
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const rootRef = ref(null)
 
 // 图片列表
 const imageList = computed({
@@ -211,6 +212,35 @@ const handleUpload = async (uploadFile) => {
     uploadProgress.value = 0
   }
 }
+
+function uploadImages(files) {
+  const remaining = props.maxCount - imageList.value.length
+  const selectedFiles = props.multiple || props.maxCount > 1 ? files.slice(0, Math.max(remaining, 0)) : files.slice(0, 1)
+  if (selectedFiles.length === 0) {
+    ElMessage.warning(`最多只能上传 ${props.maxCount} 张图片`)
+    return
+  }
+  selectedFiles.forEach((file) => {
+    handleUpload({ file })
+  })
+}
+
+function handlePaste(e) {
+  const files = Array.from(e.clipboardData?.files || []).filter((file) => file.type.startsWith('image/'))
+  if (files.length === 0) return
+  e.preventDefault()
+  uploadImages(files)
+}
+
+function handleWindowPaste(e) {
+  if (!rootRef.value) return
+  const activeElement = document.activeElement
+  if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return
+  handlePaste(e)
+}
+
+onMounted(() => window.addEventListener('paste', handleWindowPaste))
+onUnmounted(() => window.removeEventListener('paste', handleWindowPaste))
 
 // 移除图片
 const removeImage = (index) => {

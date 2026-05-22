@@ -1,5 +1,5 @@
 <template>
-  <div class="file-upload" @paste.prevent="handlePaste" tabindex="0">
+  <div ref="rootRef" class="file-upload" @paste="handlePaste" tabindex="0">
     <!-- 单文件模式 -->
     <template v-if="!multiple && maxCount === 1">
       <div v-if="fileList.length === 0" class="upload-area">
@@ -78,7 +78,7 @@ import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 import { Delete, Plus, UploadFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps({
   modelValue: { type: [String, Array], default: '' },
@@ -94,6 +94,7 @@ const emit = defineEmits(['update:modelValue', 'upload-success'])
 
 const uploading = ref(false)
 const uploadProgress = ref(0)
+const rootRef = ref(null)
 
 const fileList = computed({
   get() {
@@ -198,17 +199,33 @@ async function handleUpload(options) {
 }
 
 function handlePaste(e) {
-  const items = e.clipboardData?.items
-  if (!items) return
-  for (const item of items) {
-    if (item.kind === 'file') {
-      const file = item.getAsFile()
-      if (file) {
-        handleUpload({ file, onSuccess: () => {}, onError: () => {} })
-      }
-    }
-  }
+  const files = Array.from(e.clipboardData?.files || [])
+  if (files.length === 0) return
+  e.preventDefault()
+  uploadFiles(files)
 }
+
+function handleWindowPaste(e) {
+  if (!rootRef.value) return
+  const activeElement = document.activeElement
+  if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return
+  handlePaste(e)
+}
+
+function uploadFiles(files) {
+  const remaining = props.maxCount - fileList.value.length
+  const selectedFiles = props.multiple || props.maxCount > 1 ? files.slice(0, Math.max(remaining, 0)) : files.slice(0, 1)
+  if (selectedFiles.length === 0) {
+    ElMessage.warning(`最多只能上传 ${props.maxCount} 个文件`)
+    return
+  }
+  selectedFiles.forEach((file) => {
+    handleUpload({ file, onSuccess: () => {}, onError: () => {} })
+  })
+}
+
+onMounted(() => window.addEventListener('paste', handleWindowPaste))
+onUnmounted(() => window.removeEventListener('paste', handleWindowPaste))
 
 function removeFile(index) {
   const list = [...fileList.value]
