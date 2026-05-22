@@ -407,18 +407,6 @@ export const useSeedanceStore = defineStore('seedance', () => {
     showDialog.value = true
   }
 
-  const uploadFile = async (file) => {
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const res = await httpPost('/api/upload', formData)
-      return res.data.url
-    } catch (e) {
-      showMessageError('文件上传失败')
-      return null
-    }
-  }
-
   const cleanup = () => {
     stopPolling()
   }
@@ -431,7 +419,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     multimodalRefParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
     init, switchMode, getModeName, getStatusText, fetchData, submitTask,
-    downloadFile, retryTask, removeJob, playVideo, cleanup, uploadFile,
+    downloadFile, retryTask, removeJob, playVideo, cleanup,
     substr, replaceImg,
   }
 })

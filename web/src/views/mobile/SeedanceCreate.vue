@@ -36,45 +36,45 @@
 
       <!-- 首帧图片 -->
       <div v-if="store.activeMode === 'image_to_video_first'" class="form-item">
-        <span class="form-label">首帧图片URL</span>
-        <van-field v-model="store.imageToVideoFirstParams.first_frame_url" placeholder="https://..." />
+        <span class="form-label">首帧图片</span>
+        <FileUpload v-model="store.imageToVideoFirstParams.first_frame_url" accept="image/*" placeholder="点击上传图片" />
       </div>
 
       <!-- 首尾帧 -->
       <template v-if="store.activeMode === 'image_to_video_dual'">
         <div class="form-item">
-          <span class="form-label">首帧图片URL</span>
-          <van-field v-model="store.imageToVideoDualParams.first_frame_url" placeholder="https://..." />
+          <span class="form-label">首帧图片</span>
+          <FileUpload v-model="store.imageToVideoDualParams.first_frame_url" accept="image/*" placeholder="点击上传图片" />
         </div>
         <div class="form-item">
-          <span class="form-label">尾帧图片URL</span>
-          <van-field v-model="store.imageToVideoDualParams.last_frame_url" placeholder="https://..." />
+          <span class="form-label">尾帧图片</span>
+          <FileUpload v-model="store.imageToVideoDualParams.last_frame_url" accept="image/*" placeholder="点击上传图片" />
         </div>
       </template>
 
       <!-- 编辑视频 -->
       <template v-if="store.activeMode === 'edit_video'">
         <div class="form-item">
-          <span class="form-label">参考视频URL</span>
-          <van-field v-model="store.editVideoParams.ref_video_url" placeholder="https://..." />
+          <span class="form-label">参考视频</span>
+          <FileUpload v-model="store.editVideoParams.ref_video_url" accept="video/*" placeholder="点击上传视频" />
         </div>
         <div class="form-item">
-          <span class="form-label">参考图片URL</span>
-          <van-field v-model="store.editVideoParams.ref_image_url" placeholder="https://..." />
+          <span class="form-label">参考图片</span>
+          <FileUpload v-model="store.editVideoParams.ref_image_url" accept="image/*" placeholder="点击上传图片" />
         </div>
       </template>
 
       <!-- 延长视频 -->
       <div v-if="store.activeMode === 'extend_video'" class="form-item">
-        <span class="form-label">参考视频URL（每行一个）</span>
-        <van-field type="textarea" rows="2" placeholder="https://..." @blur="parseUrls($event, 'extend')" />
+        <span class="form-label">参考视频</span>
+        <FileUpload v-model="store.extendVideoParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="点击上传视频" />
       </div>
 
       <!-- 多模态 -->
       <template v-if="store.activeMode === 'multimodal_ref'">
-        <div class="form-item"><span class="form-label">图片URL（每行一个）</span><van-field type="textarea" rows="2" @blur="parseUrls($event, 'images')" /></div>
-        <div class="form-item"><span class="form-label">视频URL（每行一个）</span><van-field type="textarea" rows="2" @blur="parseUrls($event, 'videos')" /></div>
-        <div class="form-item"><span class="form-label">音频URL（每行一个）</span><van-field type="textarea" rows="2" @blur="parseUrls($event, 'audios')" /></div>
+        <div class="form-item"><span class="form-label">参考图片</span><FileUpload v-model="store.multimodalRefParams.image_urls" accept="image/*" multiple :maxCount="9" placeholder="点击上传图片" /></div>
+        <div class="form-item"><span class="form-label">参考视频</span><FileUpload v-model="store.multimodalRefParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="点击上传视频" /></div>
+        <div class="form-item"><span class="form-label">参考音频</span><FileUpload v-model="store.multimodalRefParams.audio_urls" accept="audio/*" multiple :maxCount="9" placeholder="点击上传音频" /></div>
       </template>
 
       <!-- 虚拟人像 -->
@@ -148,6 +148,7 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
+import FileUpload from '@/components/FileUpload.vue'
 
 const store = useSeedanceStore()
 
@@ -162,14 +163,6 @@ function getParams() {
     case 'virtual_avatar': return store.virtualAvatarParams
     default: return store.textToVideoParams
   }
-}
-
-function parseUrls(e, type) {
-  const urls = (e.target?.value || e.detail?.value || '').split('\n').filter((u) => u.trim())
-  if (type === 'extend') store.extendVideoParams.video_urls = urls
-  else if (type === 'images') store.multimodalRefParams.image_urls = urls
-  else if (type === 'videos') store.multimodalRefParams.video_urls = urls
-  else if (type === 'audios') store.multimodalRefParams.audio_urls = urls
 }
 
 onMounted(() => store.init())

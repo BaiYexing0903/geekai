@@ -45,11 +45,11 @@
           />
         </div>
 
-        <!-- 图生视频-首帧：上传图片 -->
+        <!-- 图生视频-首帧 -->
         <template v-if="store.activeMode === 'image_to_video_first'">
           <div class="param-line pt"><span class="label">首帧图片：</span></div>
           <div class="param-line">
-            <el-input v-model="store.imageToVideoFirstParams.first_frame_url" placeholder="输入图片URL" />
+            <FileUpload v-model="store.imageToVideoFirstParams.first_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
           </div>
         </template>
 
@@ -57,11 +57,11 @@
         <template v-if="store.activeMode === 'image_to_video_dual'">
           <div class="param-line pt"><span class="label">首帧图片：</span></div>
           <div class="param-line">
-            <el-input v-model="store.imageToVideoDualParams.first_frame_url" placeholder="输入首帧图片URL" />
+            <FileUpload v-model="store.imageToVideoDualParams.first_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
           </div>
           <div class="param-line pt"><span class="label">尾帧图片：</span></div>
           <div class="param-line">
-            <el-input v-model="store.imageToVideoDualParams.last_frame_url" placeholder="输入尾帧图片URL" />
+            <FileUpload v-model="store.imageToVideoDualParams.last_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
           </div>
         </template>
 
@@ -69,72 +69,27 @@
         <template v-if="store.activeMode === 'multimodal_ref'">
           <div class="param-line pt"><span class="label">参考图片：</span></div>
           <div class="param-line">
-            <div class="upload-row">
-              <el-upload :show-file-list="false" accept="image/*" :http-request="(o) => uploadTo(o, store.multimodalRefParams.image_urls)" multiple>
-                <el-button size="small">上传图片</el-button>
-              </el-upload>
-              <el-input v-model="tempUrls.multimodalImage" size="small" placeholder="或输入URL" @keyup.enter="addUrlTo('multimodalImage', store.multimodalRefParams.image_urls)" />
-              <el-button size="small" @click="addUrlTo('multimodalImage', store.multimodalRefParams.image_urls)">添加</el-button>
-            </div>
-            <div class="url-list" v-if="store.multimodalRefParams.image_urls.length">
-              <div v-for="(url, i) in store.multimodalRefParams.image_urls" :key="'mi'+i" class="url-item">
-                <el-image :src="store.replaceImg(url)" fit="cover" class="url-thumb" />
-                <span class="url-name">图片{{ i + 1 }}</span>
-                <el-button size="small" text type="danger" @click="store.multimodalRefParams.image_urls.splice(i, 1)">
-                  <i class="iconfont icon-delete"></i>
-                </el-button>
-              </div>
-            </div>
+            <FileUpload v-model="store.multimodalRefParams.image_urls" accept="image/*" multiple :maxCount="9" placeholder="拖拽图片或点击上传" tip="支持 JPG/PNG，可粘贴截图" />
           </div>
           <div class="param-line pt"><span class="label">参考视频：</span></div>
           <div class="param-line">
-            <div class="upload-row">
-              <el-upload :show-file-list="false" accept="video/*" :http-request="(o) => uploadTo(o, store.multimodalRefParams.video_urls)" multiple>
-                <el-button size="small">上传视频</el-button>
-              </el-upload>
-              <el-input v-model="tempUrls.multimodalVideo" size="small" placeholder="或输入URL" @keyup.enter="addUrlTo('multimodalVideo', store.multimodalRefParams.video_urls)" />
-              <el-button size="small" @click="addUrlTo('multimodalVideo', store.multimodalRefParams.video_urls)">添加</el-button>
-            </div>
-            <div class="url-list" v-if="store.multimodalRefParams.video_urls.length">
-              <div v-for="(url, i) in store.multimodalRefParams.video_urls" :key="'mv'+i" class="url-item">
-                <i class="iconfont icon-video url-icon"></i>
-                <span class="url-name">视频{{ i + 1 }}</span>
-                <el-button size="small" text type="danger" @click="store.multimodalRefParams.video_urls.splice(i, 1)">
-                  <i class="iconfont icon-delete"></i>
-                </el-button>
-              </div>
-            </div>
+            <FileUpload v-model="store.multimodalRefParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="拖拽视频或点击上传" />
           </div>
           <div class="param-line pt"><span class="label">参考音频：</span></div>
           <div class="param-line">
-            <div class="upload-row">
-              <el-upload :show-file-list="false" accept="audio/*" :http-request="(o) => uploadTo(o, store.multimodalRefParams.audio_urls)" multiple>
-                <el-button size="small">上传音频</el-button>
-              </el-upload>
-              <el-input v-model="tempUrls.multimodalAudio" size="small" placeholder="或输入URL" @keyup.enter="addUrlTo('multimodalAudio', store.multimodalRefParams.audio_urls)" />
-              <el-button size="small" @click="addUrlTo('multimodalAudio', store.multimodalRefParams.audio_urls)">添加</el-button>
-            </div>
-            <div class="url-list" v-if="store.multimodalRefParams.audio_urls.length">
-              <div v-for="(url, i) in store.multimodalRefParams.audio_urls" :key="'ma'+i" class="url-item">
-                <i class="iconfont icon-mp3 url-icon"></i>
-                <span class="url-name">音频{{ i + 1 }}</span>
-                <el-button size="small" text type="danger" @click="store.multimodalRefParams.audio_urls.splice(i, 1)">
-                  <i class="iconfont icon-delete"></i>
-                </el-button>
-              </div>
-            </div>
+            <FileUpload v-model="store.multimodalRefParams.audio_urls" accept="audio/*" multiple :maxCount="9" placeholder="拖拽音频或点击上传" />
           </div>
         </template>
 
         <!-- 编辑视频 -->
         <template v-if="store.activeMode === 'edit_video'">
-          <div class="param-line pt"><span class="label">参考视频URL：</span></div>
+          <div class="param-line pt"><span class="label">参考视频：</span></div>
           <div class="param-line">
-            <el-input v-model="store.editVideoParams.ref_video_url" placeholder="输入参考视频URL" />
+            <FileUpload v-model="store.editVideoParams.ref_video_url" accept="video/*" placeholder="拖拽视频或点击上传" />
           </div>
-          <div class="param-line pt"><span class="label">参考图片URL：</span></div>
+          <div class="param-line pt"><span class="label">参考图片：</span></div>
           <div class="param-line">
-            <el-input v-model="store.editVideoParams.ref_image_url" placeholder="输入参考图片URL" />
+            <FileUpload v-model="store.editVideoParams.ref_image_url" accept="image/*" placeholder="拖拽图片或点击上传" />
           </div>
         </template>
 
@@ -142,22 +97,7 @@
         <template v-if="store.activeMode === 'extend_video'">
           <div class="param-line pt"><span class="label">参考视频：</span></div>
           <div class="param-line">
-            <div class="upload-row">
-              <el-upload :show-file-list="false" accept="video/*" :http-request="(o) => uploadTo(o, store.extendVideoParams.video_urls)" multiple>
-                <el-button size="small">上传视频</el-button>
-              </el-upload>
-              <el-input v-model="tempUrls.extendVideo" size="small" placeholder="或输入URL" @keyup.enter="addUrlTo('extendVideo', store.extendVideoParams.video_urls)" />
-              <el-button size="small" @click="addUrlTo('extendVideo', store.extendVideoParams.video_urls)">添加</el-button>
-            </div>
-            <div class="url-list" v-if="store.extendVideoParams.video_urls.length">
-              <div v-for="(url, i) in store.extendVideoParams.video_urls" :key="'ev'+i" class="url-item">
-                <i class="iconfont icon-video url-icon"></i>
-                <span class="url-name">视频{{ i + 1 }}</span>
-                <el-button size="small" text type="danger" @click="store.extendVideoParams.video_urls.splice(i, 1)">
-                  <i class="iconfont icon-delete"></i>
-                </el-button>
-              </div>
-            </div>
+            <FileUpload v-model="store.extendVideoParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="拖拽视频或点击上传" />
           </div>
         </template>
 
@@ -307,9 +247,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useSeedanceStore } from '@/store/seedance'
 import { Loading } from '@element-plus/icons-vue'
+import FileUpload from '@/components/FileUpload.vue'
 
 const store = useSeedanceStore()
 
@@ -354,31 +295,6 @@ function getParams() {
     case 'extend_video': return store.extendVideoParams
     case 'virtual_avatar': return store.virtualAvatarParams
     default: return store.textToVideoParams
-  }
-}
-
-const tempUrls = reactive({
-  multimodalImage: '',
-  multimodalVideo: '',
-  multimodalAudio: '',
-  extendVideo: '',
-})
-
-async function uploadTo(options, targetArray) {
-  const url = await store.uploadFile(options.file)
-  if (url) {
-    targetArray.push(url)
-    options.onSuccess({})
-  } else {
-    options.onError(new Error('上传失败'))
-  }
-}
-
-function addUrlTo(key, targetArray) {
-  const url = tempUrls[key].trim()
-  if (url) {
-    targetArray.push(url)
-    tempUrls[key] = ''
   }
 }
 
@@ -574,46 +490,6 @@ onUnmounted(() => store.cleanup())
 .preview-video {
   width: 100%;
   max-height: 70vh;
-}
-
-.upload-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  margin-bottom: 6px;
-  .el-input {
-    flex: 1;
-  }
-}
-.url-list {
-  margin-top: 4px;
-}
-.url-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  background: var(--el-fill-color-light);
-  border-radius: 4px;
-  margin-bottom: 4px;
-}
-.url-thumb {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-.url-icon {
-  font-size: 18px;
-  color: var(--el-text-color-regular);
-}
-.url-name {
-  flex: 1;
-  font-size: 12px;
-  color: var(--el-text-color-regular);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 @media (max-width: 768px) {
