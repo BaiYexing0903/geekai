@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Film frame -->
+  <rect x="18" y="40" width="140" height="120" rx="12" fill="none" stroke="white" stroke-width="8"/>
+  <!-- Left sprocket holes -->
+  <rect x="28" y="55" width="10" height="8" rx="2" fill="white"/>
+  <rect x="28" y="77" width="10" height="8" rx="2" fill="white"/>
+  <rect x="28" y="99" width="10" height="8" rx="2" fill="white"/>
+  <rect x="28" y="121" width="10" height="8" rx="2" fill="white"/>
+  <rect x="28" y="143" width="10" height="8" rx="2" fill="white"/>
+  <!-- Right sprocket holes -->
+  <rect x="138" y="55" width="10" height="8" rx="2" fill="white"/>
+  <rect x="138" y="77" width="10" height="8" rx="2" fill="white"/>
+  <rect x="138" y="99" width="10" height="8" rx="2" fill="white"/>
+  <rect x="138" y="121" width="10" height="8" rx="2" fill="white"/>
+  <rect x="138" y="143" width="10" height="8" rx="2" fill="white"/>
+  <!-- Play button -->
+  <polygon points="72,65 72,135 128,100" fill="white"/>
+  <!-- AI Sparkle -->
+  <path d="M172 12 L176 28 L192 32 L176 36 L172 52 L168 36 L152 32 L168 28 Z" fill="white"/>
+</svg>

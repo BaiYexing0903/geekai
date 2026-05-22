@@ -18,7 +18,8 @@
             <div class="tool-card">
               <div class="tool-icon-wrapper">
                 <div class="tool-icon" :style="{ background: tool.gradient }">
-                  <i class="iconfont" :class="tool.icon"></i>
+                  <img v-if="!tool.icon.startsWith('icon-')" :src="tool.icon" class="custom-tool-icon" />
+                  <i v-else class="iconfont" :class="tool.icon"></i>
                 </div>
                 <div class="tool-badge" v-if="tool.badge">{{ tool.badge }}</div>
               </div>
@@ -44,6 +45,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import iconAiDraw from '@/assets/img/icon-aidraw.svg'
+import iconSeedance from '@/assets/img/icon-seedance.svg'
 
 const router = useRouter()
 
@@ -84,6 +87,17 @@ const aiTools = ref([
     url: '/mobile/create?tab=dalle',
   },
   {
+    key: 'aidraw',
+    name: 'AI绘画',
+    desc: 'AI智能绘画创作',
+    icon: iconAiDraw,
+    gradient: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+    tag: 'AI绘画',
+    status: 'active',
+    statusText: '可用',
+    url: '/mobile/aidraw',
+  },
+  {
     key: 'suno',
     name: '音乐创作',
     desc: 'AI音乐生成与编辑',
@@ -105,6 +119,18 @@ const aiTools = ref([
     status: 'beta',
     statusText: '测试版',
     url: '/mobile/video',
+  },
+  {
+    key: 'seedance',
+    name: 'Seedance',
+    desc: 'Seedance视频生成',
+    icon: iconSeedance,
+    gradient: 'linear-gradient(135deg, #14B8A6, #0D9488)',
+    badge: '新功能',
+    tag: 'AI视频',
+    status: 'active',
+    statusText: '可用',
+    url: '/mobile/seedance',
   },
   {
     key: 'jimeng',
@@ -246,6 +272,11 @@ const navigateTo = (url) => {
                   font-size: 28px;
                   color: white;
                 }
+
+                .custom-tool-icon {
+                  width: 28px;
+                  height: 28px;
+                }
               }
 
               .tool-badge {
@@ -386,6 +417,11 @@ const navigateTo = (url) => {
 
               .iconfont {
                 font-size: 24px;
+              }
+
+              .custom-tool-icon {
+                width: 24px;
+                height: 24px;
               }
             }
 

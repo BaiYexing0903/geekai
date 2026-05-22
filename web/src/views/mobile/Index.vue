@@ -57,7 +57,8 @@
         >
           <template #icon>
             <div class="feature-icon" :style="{ backgroundColor: feature.color }">
-              <i class="iconfont" :class="feature.icon"></i>
+              <img v-if="!feature.icon.startsWith('icon-')" :src="feature.icon" class="custom-feature-icon" />
+              <i v-else class="iconfont" :class="feature.icon"></i>
             </div>
           </template>
           <template #text>
@@ -126,6 +127,8 @@ import { ElMessage } from 'element-plus'
 import { showNotify } from 'vant'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import iconAiDraw from '@/assets/img/icon-aidraw.svg'
+import iconSeedance from '@/assets/img/icon-seedance.svg'
 
 const title = ref(import.meta.env.VITE_TITLE)
 const router = useRouter()
@@ -146,6 +149,7 @@ const features = ref([
     color: '#F59E0B',
     url: '/mobile/create?tab=dalle',
   },
+  { key: 'aidraw', name: 'AI绘画', icon: iconAiDraw, color: '#6366F1', url: '/mobile/aidraw' },
   {
     key: 'suno',
     name: '音乐创作',
@@ -160,6 +164,7 @@ const features = ref([
     color: '#10B981',
     url: '/mobile/video',
   },
+  { key: 'seedance', name: 'Seedance', icon: iconSeedance, color: '#14B8A6', url: '/mobile/seedance' },
   {
     key: 'jimeng',
     name: '即梦AI',
@@ -438,6 +443,11 @@ const useRole = (roleId) => {
         i {
           font-size: 24px;
           color: white;
+        }
+
+        .custom-feature-icon {
+          width: 24px;
+          height: 24px;
         }
       }
 

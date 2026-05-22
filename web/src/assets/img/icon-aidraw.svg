@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Brush handle -->
+  <path d="M55 168 L160 55 L175 70 L70 183 Z" fill="white"/>
+  <!-- Brush tip -->
+  <path d="M42 190 L55 168 L70 183 Z" fill="white"/>
+  <!-- Paint trail -->
+  <path d="M25 180 Q50 172 75 180 Q100 190 125 175" stroke="white" fill="none" stroke-width="5" stroke-linecap="round"/>
+  <!-- AI Sparkle large -->
+  <path d="M168 18 L173 38 L193 43 L173 48 L168 68 L163 48 L143 43 L163 38 Z" fill="white"/>
+  <!-- AI Sparkle small -->
+  <path d="M190 5 L192 15 L202 18 L192 21 L190 31 L188 21 L178 18 L188 15 Z" fill="white" opacity="0.7"/>
+</svg>
