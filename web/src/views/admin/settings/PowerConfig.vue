@@ -137,6 +137,26 @@ import { onMounted, reactive, ref } from 'vue'
 const system = ref({})
 const systemFormRef = ref(null)
 
+const defaultVeoPowers = {
+  'veo3.1-4k_4k': 0,
+  'veo3.1-4k_1080p': 0,
+  'veo3.1-4k_720p': 0,
+  'veo_3_1-fast-4K_4k': 0,
+  'veo_3_1-fast-4K_1080p': 0,
+  'veo_3_1-fast-4K_720p': 0,
+}
+
+function normalizeVeoPowers(veoPowers = {}) {
+  const normalized = { ...defaultVeoPowers }
+  Object.entries(veoPowers).forEach(([key, value]) => {
+    const normalizedKey = key.endsWith('_8') ? key.slice(0, -2) : key
+    if (Object.prototype.hasOwnProperty.call(defaultVeoPowers, normalizedKey)) {
+      normalized[normalizedKey] = value
+    }
+  })
+  return normalized
+}
+
 onMounted(() => {
   // 加载系统配置
   httpGet('/api/admin/config/get?key=system')
@@ -156,14 +176,7 @@ onMounted(() => {
         'kling-v1_pro_5': 420,
         'kling-v1_pro_10': 840,
       }
-      system.value.veo_powers = system.value.veo_powers || {
-        'veo3.1-4k_4k': 0,
-        'veo3.1-4k_1080p': 0,
-        'veo3.1-4k_720p': 0,
-        'veo_3_1-fast-4K_4k': 0,
-        'veo_3_1-fast-4K_1080p': 0,
-        'veo_3_1-fast-4K_720p': 0,
-      }
+      system.value.veo_powers = normalizeVeoPowers(system.value.veo_powers)
     })
     .catch((e) => {
       ElMessage.error('加载系统配置失败: ' + e.message)
@@ -184,7 +197,7 @@ const save = function () {
         suno_power: system.value.suno_power,
         luma_power: system.value.luma_power,
         keling_powers: system.value.keling_powers,
-        veo_powers: system.value.veo_powers,
+        veo_powers: normalizeVeoPowers(system.value.veo_powers),
       })
         .then(() => {
           ElMessage.success('操作成功！')

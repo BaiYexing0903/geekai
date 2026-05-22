@@ -311,6 +311,9 @@ func (h *VideoHandler) VeoCreate(c *gin.Context) {
 	powerKey := fmt.Sprintf("%s_%s", data.Model, data.Resolution)
 	power := h.App.SysConfig.Base.VeoPowers[powerKey]
 	if power == 0 {
+		power = h.App.SysConfig.Base.VeoPowers[powerKey+"_8"]
+	}
+	if power == 0 {
 		resp.ERROR(c, "当前模型暂不支持")
 		return
 	}
