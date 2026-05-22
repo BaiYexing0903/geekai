@@ -164,15 +164,12 @@ type KeLingVideoParams struct {
 }
 
 type VeoVideoParams struct {
-	TaskType       string   `json:"task_type"`
-	Model          string   `json:"model"`
-	Prompt         string   `json:"prompt"`
-	Images         []string `json:"images,omitempty"`
-	AspectRatio    string   `json:"aspect_ratio"`
-	Resolution     string   `json:"resolution,omitempty"`
-	Duration       string   `json:"duration,omitempty"`
-	EnhancePrompt  bool     `json:"enhance_prompt"`
-	EnableUpsample bool     `json:"enable_upsample"`
+	TaskType    string   `json:"task_type"`
+	Model       string   `json:"model"`
+	Prompt      string   `json:"prompt"`
+	Images      []string `json:"images,omitempty"`
+	AspectRatio string   `json:"aspect_ratio"`
+	Resolution  string   `json:"resolution,omitempty"`
 }
 
 // CameraControl 摄像机控制

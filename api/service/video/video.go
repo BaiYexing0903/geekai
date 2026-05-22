@@ -375,9 +375,16 @@ func (s *Service) SyncTaskProgress() {
 						if errMsg == "" {
 							errMsg = task.Message
 						}
+						if errMsg == "" && task.RawData != nil {
+							errMsg = utils.JsonEncode(task.RawData)
+						}
+						if errMsg == "" {
+							errMsg = "Veo task failed"
+						}
 						s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(map[string]interface{}{
 							"progress":  service.FailTaskProgress,
 							"err_msg":   errMsg,
+							"raw_data":  utils.JsonEncode(task),
 							"cover_url": "/images/failed.jpg",
 						})
 					}
@@ -696,14 +703,14 @@ type VeoCreateResp struct {
 }
 
 type VeoQueryResp struct {
-	ID               string `json:"id"`
-	Status           string `json:"status"`
-	StatusUpdateTime int64  `json:"status_update_time"`
-	VideoURL         string `json:"video_url"`
-	CoverURL         string `json:"cover_url"`
-	Error            string `json:"error"`
-	Message          string `json:"message"`
-	RawData          any    `json:"raw_data,omitempty"`
+	ID               string         `json:"id"`
+	Status           string         `json:"status"`
+	StatusUpdateTime int64          `json:"status_update_time"`
+	VideoURL         string         `json:"video_url"`
+	CoverURL         string         `json:"cover_url"`
+	Error            string         `json:"error"`
+	Message          string         `json:"message"`
+	RawData          map[string]any `json:"raw_data,omitempty"`
 }
 
 func (s *Service) VeoCreate(task types.VideoTask) (VeoCreateResp, error) {
@@ -733,13 +740,10 @@ func (s *Service) VeoCreate(task types.VideoTask) (VeoCreateResp, error) {
 	}
 
 	payload := map[string]interface{}{
-		"model":           params.Model,
-		"prompt":          task.Prompt,
-		"aspect_ratio":    params.AspectRatio,
-		"resolution":      params.Resolution,
-		"duration":        params.Duration,
-		"enhance_prompt":  params.EnhancePrompt,
-		"enable_upsample": params.EnableUpsample,
+		"model":        params.Model,
+		"prompt":       task.Prompt,
+		"aspect_ratio": params.AspectRatio,
+		"resolution":   params.Resolution,
 	}
 	if len(params.Images) > 0 {
 		payload["images"] = params.Images
@@ -826,7 +830,10 @@ func (s *Service) QueryVeoTask(taskId string, channel string) (VeoQueryResp, err
 	if err := json.Unmarshal(body, &response); err != nil {
 		return VeoQueryResp{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	response.RawData = json.RawMessage(body)
+	var rawData map[string]any
+	if err := json.Unmarshal(body, &rawData); err == nil {
+		response.RawData = rawData
+	}
 	return response, nil
 }
 

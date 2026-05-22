@@ -9,11 +9,9 @@
           <span class="label">模型：</span>
         </div>
         <div class="param-line">
-          <el-radio-group v-model="store.selectedModel" size="small" @change="onModelChange">
-            <el-radio-button v-for="model in store.videoModels" :key="model.value" :value="model.value">
-              {{ model.label }}
-            </el-radio-button>
-          </el-radio-group>
+          <el-select v-model="store.selectedModel" placeholder="选择模型" @change="onModelChange">
+            <el-option v-for="model in store.videoModels" :key="model.value" :label="model.label" :value="model.value" />
+          </el-select>
         </div>
 
         <!-- 提示词（非虚拟人像必须） -->
@@ -69,22 +67,14 @@
           </el-select>
         </div>
 
-        <div class="param-line pt"><span class="label">时长：</span></div>
-        <div class="param-line">
+        <div v-if="!store.isVeo" class="param-line pt"><span class="label">时长：</span></div>
+        <div v-if="!store.isVeo" class="param-line">
           <el-select v-model="currentDuration" placeholder="选择时长">
-            <el-option v-for="opt in currentDurationOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            <el-option v-for="opt in store.durationOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </div>
 
-        <template v-if="store.isVeo">
-          <div class="param-line">
-            <el-switch v-model="store.veoParams.enhance_prompt" active-text="增强提示词" inactive-text="不增强" />
-          </div>
-          <div class="param-line">
-            <el-switch v-model="store.veoParams.enable_upsample" active-text="启用超分" inactive-text="不超分" />
-          </div>
-        </template>
-        <template v-else>
+        <template v-if="!store.isVeo">
           <div class="param-line">
             <el-switch v-model="currentGenerateAudio" active-text="生成音频" inactive-text="无声" />
           </div>
@@ -161,7 +151,7 @@
             </div>
             <div v-if="item.status === 'failed'" class="status-overlay failed">
               <i class="iconfont icon-warning"></i>
-              <span>失败</span>
+              <span>{{ item.err_msg || '生成失败' }}</span>
             </div>
           </div>
           <div class="task-info">
@@ -174,6 +164,7 @@
               </el-tag>
             </div>
             <div class="task-prompt">{{ store.substr(item.prompt, 60) }}</div>
+            <div v-if="item.status === 'failed' && item.err_msg" class="task-error">{{ item.err_msg }}</div>
             <div class="task-actions">
               <el-button v-if="item.video_url" size="small" @click="store.playVideo(item)" text>
                 <i class="iconfont icon-play"></i>
@@ -222,18 +213,12 @@ const filterLabels = { all: '全部', processing: '进行中', succeeded: '已�
 
 const currentResolutionOptions = computed(() => store.isVeo ? store.veoResolutionOptions : store.resolutionOptions)
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
-const currentDurationOptions = computed(() => store.isVeo ? store.veoDurationOptions : store.durationOptions)
 
-const currentModel = computed({
-  get: () => store.selectedModel,
-  set: (v) => { store.selectedModel = v },
-})
 const currentResolution = computed({
   get: () => store.isVeo ? store.veoParams.resolution : getParams()?.resolution || '720p',
   set: (v) => {
     if (store.isVeo) {
       store.veoParams.resolution = v
-      if (v === '1080p' || v === '4k') store.veoParams.duration = '8'
       return
     }
     getParams().resolution = v
@@ -250,14 +235,8 @@ const currentRatio = computed({
   },
 })
 const currentDuration = computed({
-  get: () => store.isVeo ? store.veoParams.duration : getParams()?.duration || 5,
-  set: (v) => {
-    if (store.isVeo) {
-      store.veoParams.duration = v
-      return
-    }
-    getParams().duration = v
-  },
+  get: () => getParams()?.duration || 5,
+  set: (v) => { getParams().duration = v },
 })
 const currentGenerateAudio = computed({
   get: () => getParams()?.generate_audio ?? true,
@@ -286,9 +265,6 @@ function onModelChange(value) {
   if (!model) return
   if (model.provider === 'veo') {
     store.veoParams.model = model.model
-    if (store.veoParams.resolution === '1080p' || store.veoParams.resolution === '4k') {
-      store.veoParams.duration = '8'
-    }
     store.fetchData(1)
     return
   }
@@ -476,6 +452,12 @@ onUnmounted(() => store.cleanup())
   font-size: 13px;
   color: var(--el-text-color-regular);
   margin-bottom: 8px;
+  line-height: 1.4;
+}
+.task-error {
+  font-size: 12px;
+  color: var(--el-color-danger);
+  margin-bottom: 6px;
   line-height: 1.4;
 }
 .task-actions {

@@ -261,14 +261,11 @@ func (h *VideoHandler) KeLingCreate(c *gin.Context) {
 
 func (h *VideoHandler) VeoCreate(c *gin.Context) {
 	var data struct {
-		Model          string   `json:"model"`
-		Prompt         string   `json:"prompt"`
-		Images         []string `json:"images"`
-		AspectRatio    string   `json:"aspect_ratio"`
-		Resolution     string   `json:"resolution"`
-		Duration       string   `json:"duration"`
-		EnhancePrompt  bool     `json:"enhance_prompt"`
-		EnableUpsample bool     `json:"enable_upsample"`
+		Model       string   `json:"model"`
+		Prompt      string   `json:"prompt"`
+		Images      []string `json:"images"`
+		AspectRatio string   `json:"aspect_ratio"`
+		Resolution  string   `json:"resolution"`
 	}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		resp.ERROR(c, types.InvalidArgs)
@@ -305,24 +302,13 @@ func (h *VideoHandler) VeoCreate(c *gin.Context) {
 		return
 	}
 
-	if data.Duration == "" {
-		data.Duration = "8"
-	}
-	if data.Duration != "4" && data.Duration != "6" && data.Duration != "8" {
-		resp.ERROR(c, "不支持的视频时长")
-		return
-	}
-	if data.Resolution == "1080p" || data.Resolution == "4k" {
-		data.Duration = "8"
-	}
-
 	user, err := h.GetLoginUser(c)
 	if err != nil {
 		resp.NotAuth(c)
 		return
 	}
 
-	powerKey := fmt.Sprintf("%s_%s_%s", data.Model, data.Resolution, data.Duration)
+	powerKey := fmt.Sprintf("%s_%s", data.Model, data.Resolution)
 	power := h.App.SysConfig.Base.VeoPowers[powerKey]
 	if power == 0 {
 		resp.ERROR(c, "当前模型暂不支持")
@@ -340,15 +326,12 @@ func (h *VideoHandler) VeoCreate(c *gin.Context) {
 
 	userId := int(h.GetLoginUserId(c))
 	params := types.VeoVideoParams{
-		TaskType:       taskType,
-		Model:          data.Model,
-		Prompt:         data.Prompt,
-		Images:         data.Images,
-		AspectRatio:    data.AspectRatio,
-		Resolution:     data.Resolution,
-		Duration:       data.Duration,
-		EnhancePrompt:  data.EnhancePrompt,
-		EnableUpsample: data.EnableUpsample,
+		TaskType:    taskType,
+		Model:       data.Model,
+		Prompt:      data.Prompt,
+		Images:      data.Images,
+		AspectRatio: data.AspectRatio,
+		Resolution:  data.Resolution,
 	}
 	task := types.VideoTask{
 		UserId:           userId,
@@ -470,8 +453,7 @@ func (h *VideoHandler) List(c *gin.Context) {
 				"model":        params.Model,
 				"aspect_ratio": params.AspectRatio,
 				"resolution":   params.Resolution,
-				"duration":     params.Duration,
-				"model_name":   fmt.Sprintf("%s_%s_%s", params.Model, params.Resolution, params.Duration),
+				"model_name":   fmt.Sprintf("%s_%s", params.Model, params.Resolution),
 			}
 
 			if item.VideoURL != "" {

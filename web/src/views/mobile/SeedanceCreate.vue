@@ -11,14 +11,20 @@
       <!-- 模型选择 -->
       <div class="form-item">
         <span class="form-label">模型</span>
-        <div class="model-btns">
-          <div
-            v-for="model in store.videoModels"
-            :key="model.value"
-            :class="['model-btn', { active: store.selectedModel === model.value }]"
-            @click="selectModel(model)"
-          >{{ model.label }}</div>
-        </div>
+        <van-field
+          v-model="selectedModelLabel"
+          is-link
+          readonly
+          placeholder="请选择模型"
+          @click="showModelPicker = true"
+        />
+        <van-popup v-model:show="showModelPicker" round position="bottom">
+          <van-picker
+            :columns="modelColumns"
+            @cancel="showModelPicker = false"
+            @confirm="onModelConfirm"
+          />
+        </van-popup>
       </div>
 
       <!-- 提示词 -->
@@ -65,24 +71,6 @@
         </div>
       </div>
 
-      <div class="form-item" v-if="store.isVeo">
-        <span class="form-label">时长</span>
-        <div class="ratio-btns">
-          <div v-for="r in store.veoDurationOptions" :key="r.value" :class="['ratio-btn', { active: store.veoParams.duration === r.value }]" @click="store.veoParams.duration = r.value">
-            {{ r.label }}
-          </div>
-        </div>
-      </div>
-
-      <div class="form-item" v-if="store.isVeo">
-        <van-field name="enhance" label="增强提示词">
-          <template #input><van-switch v-model="store.veoParams.enhance_prompt" size="20px" /></template>
-        </van-field>
-        <van-field name="upsample" label="启用超分">
-          <template #input><van-switch v-model="store.veoParams.enable_upsample" size="20px" /></template>
-        </van-field>
-      </div>
-
       <div class="form-item" v-if="!store.isVeo">
         <van-field name="switch" label="生成音频">
           <template #input><van-switch v-model="getParams().generate_audio" size="20px" /></template>
@@ -116,6 +104,7 @@
               </van-tag>
             </div>
             <div class="work-prompt">{{ item.prompt?.substring(0, 50) }}</div>
+            <div v-if="item.status === 'failed' && item.err_msg" class="work-error">{{ item.err_msg }}</div>
             <div class="work-actions">
               <van-icon v-if="item.video_url" name="play-circle-o" size="22" @click="store.playVideo(item)" />
               <van-icon v-if="item.status === 'failed'" name="replay" size="22" @click="store.retryTask(item.id)" />
@@ -135,11 +124,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
 
 const store = useSeedanceStore()
+const showModelPicker = ref(false)
+
+const modelColumns = computed(() => store.videoModels.map((model) => ({ text: model.label, value: model.value })))
+const selectedModelLabel = computed(() => store.currentModelConfig.label)
 
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
 const currentRatio = computed({
@@ -153,6 +146,13 @@ const currentRatio = computed({
   },
 })
 
+function onModelConfirm(option) {
+  const value = option?.value ?? option?.selectedOptions?.[0]?.value
+  const model = store.videoModels.find((item) => item.value === value)
+  if (model) selectModel(model)
+  showModelPicker.value = false
+}
+
 function selectModel(model) {
   store.selectedModel = model.value
   if (model.provider === 'veo') {
@@ -165,7 +165,6 @@ function selectModel(model) {
 
 function setVeoResolution(value) {
   store.veoParams.resolution = value
-  if (value === '1080p' || value === '4k') store.veoParams.duration = '8'
 }
 
 function getParams() {
@@ -269,5 +268,6 @@ onMounted(() => store.init())
 .work-info { flex: 1; min-width: 0; }
 .work-tags { display: flex; gap: 4px; margin-bottom: 4px; }
 .work-prompt { font-size: 12px; color: #666; margin-bottom: 6px; }
+.work-error { font-size: 12px; color: #ee0a24; margin-bottom: 6px; line-height: 1.4; }
 .work-actions { display: flex; gap: 12px; }
 </style>

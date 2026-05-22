@@ -98,7 +98,7 @@
                 Veo 算力
                 <el-tooltip
                   effect="dark"
-                  content="Veo 按模型、分辨率和时长配置算力"
+                  content="Veo 按模型和分辨率配置算力"
                   raw-content
                   placement="right"
                 >
@@ -157,12 +157,12 @@ onMounted(() => {
         'kling-v1_pro_10': 840,
       }
       system.value.veo_powers = system.value.veo_powers || {
-        'veo3.1-4k_4k_8': 0,
-        'veo3.1-4k_1080p_8': 0,
-        'veo3.1-4k_720p_8': 0,
-        'veo_3_1-fast-4K_4k_8': 0,
-        'veo_3_1-fast-4K_1080p_8': 0,
-        'veo_3_1-fast-4K_720p_8': 0,
+        'veo3.1-4k_4k': 0,
+        'veo3.1-4k_1080p': 0,
+        'veo3.1-4k_720p': 0,
+        'veo_3_1-fast-4K_4k': 0,
+        'veo_3_1-fast-4K_1080p': 0,
+        'veo_3_1-fast-4K_720p': 0,
       }
     })
     .catch((e) => {

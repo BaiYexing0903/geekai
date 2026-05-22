@@ -29,8 +29,8 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const videoModels = [
     { label: 'Seedance Fast', value: 'seedance-fast', provider: 'seedance', model: 'fast' },
     { label: 'Seedance 2.0', value: 'seedance-standard', provider: 'seedance', model: 'standard' },
-    { label: 'Veo 3.1 4K', value: 'veo3.1-4k', provider: 'veo', model: 'veo3.1-4k' },
-    { label: 'Veo Fast 4K', value: 'veo_3_1-fast-4K', provider: 'veo', model: 'veo_3_1-fast-4K' },
+    { label: 'Veo 3.1', value: 'veo3.1-4k', provider: 'veo', model: 'veo3.1-4k' },
+    { label: 'Veo Fast', value: 'veo_3_1-fast-4K', provider: 'veo', model: 'veo_3_1-fast-4K' },
   ]
   const currentModelConfig = computed(() => videoModels.find((m) => m.value === selectedModel.value) || videoModels[0])
   const isVeo = computed(() => currentModelConfig.value.provider === 'veo')
@@ -50,11 +50,6 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     { label: '1080p', value: '1080p' },
     { label: '4k', value: '4k' },
   ]
-  const veoDurationOptions = [
-    { label: '4秒', value: '4' },
-    { label: '6秒', value: '6' },
-    { label: '8秒', value: '8' },
-  ]
 
   const textToVideoParams = reactive({ model: 'fast', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const imageToVideoFirstParams = reactive({ model: 'fast', first_frame_url: '', resolution: '720p', ratio: 'adaptive', duration: 5, generate_audio: false, watermark: false })
@@ -63,12 +58,12 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const editVideoParams = reactive({ model: 'fast', ref_video_url: '', ref_image_url: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const extendVideoParams = reactive({ model: 'fast', video_urls: [], resolution: '720p', ratio: '16:9', duration: 8, generate_audio: true, watermark: false })
   const virtualAvatarParams = reactive({ model: 'fast', asset_id: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
-  const veoParams = reactive({ model: 'veo3.1-4k', images: [], resolution: '4k', aspect_ratio: '16:9', duration: '8', enhance_prompt: true, enable_upsample: true })
+  const veoParams = reactive({ model: 'veo3.1-4k', images: [], resolution: '4k', aspect_ratio: '16:9' })
 
   const currentMode = computed(() => modes.find((m) => m.key === activeMode.value) || modes[0])
   const currentPowerCost = computed(() => {
     if (isVeo.value) {
-      const key = `${veoParams.model}_${veoParams.resolution}_${veoParams.duration}`
+      const key = `${veoParams.model}_${veoParams.resolution}`
       return powerConfig.veo_powers?.[key] || 0
     }
     const p = getParams()
@@ -159,9 +154,6 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
           images: veoParams.images,
           aspect_ratio: veoParams.aspect_ratio,
           resolution: veoParams.resolution,
-          duration: veoParams.duration,
-          enhance_prompt: veoParams.enhance_prompt,
-          enable_upsample: veoParams.enable_upsample,
         })
         if (res.data) {
           showMessageOK('任务提交成功')
@@ -257,7 +249,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   return {
     activeMode, loading, submitting, currentList, listLoading, listFinished,
     isLogin, userPower, currentPrompt, selectedModel, powerConfig, showVideoDialog, currentVideoUrl,
-    modes, videoModels, currentModelConfig, isVeo, ratioOptions, veoRatioOptions, veoResolutionOptions, veoDurationOptions,
+    modes, videoModels, currentModelConfig, isVeo, ratioOptions, veoRatioOptions, veoResolutionOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
     multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
