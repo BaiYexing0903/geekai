@@ -328,6 +328,8 @@ const gptSizes = [
   { label: '1:1 (1024x1024)', value: '1024x1024' },
   { label: '2:3 (1024x1536)', value: '1024x1536' },
   { label: '3:2 (1536x1024)', value: '1536x1024' },
+  { label: '9:16 (1088x1920)', value: '1088x1920' },
+  { label: '16:9 (1920x1088)', value: '1920x1088' },
 ]
 
 const selectedModel = ref(null)

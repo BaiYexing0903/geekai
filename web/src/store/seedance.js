@@ -389,7 +389,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
       aspect_ratio: veoParams.aspect_ratio,
       resolution: veoParams.resolution,
     })
-    if (response.data) {
+    if (response.code === 0) {
       showMessageOK('任务提交成功')
       isOver.value = false
       await fetchData(1)

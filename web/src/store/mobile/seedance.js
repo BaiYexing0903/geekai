@@ -165,7 +165,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
           aspect_ratio: veoParams.aspect_ratio,
           resolution: veoParams.resolution,
         })
-        if (res.data) {
+        if (res.code === 0) {
           showMessageOK('任务提交成功')
           listFinished.value = false
           await fetchData(1)
