@@ -24,8 +24,8 @@
       <div class="form-item">
         <span class="form-label">模型</span>
         <div class="model-btns">
-          <div :class="['model-btn', { active: getParams().model === 'fast' }]" @click="getParams().model = 'fast'">快速</div>
-          <div :class="['model-btn', { active: getParams().model === 'standard' }]" @click="getParams().model = 'standard'">标准</div>
+          <div :class="['model-btn', { active: getParams().model === 'fast' }]" @click="getParams().model = 'fast'">Seedance 2.0 Fast</div>
+          <div :class="['model-btn', { active: getParams().model === 'standard' }]" @click="getParams().model = 'standard'">Seedance 2.0 VIP</div>
         </div>
       </div>
 

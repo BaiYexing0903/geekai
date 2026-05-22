@@ -25,8 +25,8 @@
         </div>
         <div class="param-line">
           <el-radio-group v-model="currentModel" size="small">
-            <el-radio-button value="fast">快速</el-radio-button>
-            <el-radio-button value="standard">标准</el-radio-button>
+            <el-radio-button value="fast">Seedance 2.0 Fast</el-radio-button>
+            <el-radio-button value="standard">Seedance 2.0 VIP</el-radio-button>
           </el-radio-group>
         </div>
 
