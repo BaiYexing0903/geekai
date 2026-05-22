@@ -120,7 +120,7 @@
               <div class="mt-2 mb-2" v-if="params.mode === 'image_to_image'">
                 <label class="text-gray-700 font-semibold">参考图</label>
                 <div class="py-2">
-                  <ImageUpload v-model="params.images" :max-count="1" :max-size="50" />
+                  <ImageUpload v-model="params.images" :max-count="10" :multiple="true" :max-size="50" />
                 </div>
               </div>
             </el-form>
