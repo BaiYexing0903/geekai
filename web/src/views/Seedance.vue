@@ -116,8 +116,17 @@
           class="task-item"
         >
           <div class="task-cover" @click="item.video_url && store.playVideo(item)">
+            <video
+              v-if="item.status === 'succeeded' && item.video_url"
+              :src="store.replaceImg(item.video_url)"
+              class="cover-video"
+              muted
+              autoplay
+              loop
+              playsinline
+            />
             <el-image
-              v-if="item.cover_url"
+              v-else-if="item.cover_url"
               :src="item.cover_url"
               fit="cover"
               class="cover-img"
@@ -361,9 +370,12 @@ onUnmounted(() => store.cleanup())
   position: relative;
   flex-shrink: 0;
   background: var(--el-fill-color);
+  .cover-video,
   .cover-img {
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    display: block;
   }
   .cover-placeholder {
     width: 100%;
