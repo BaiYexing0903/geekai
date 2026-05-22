@@ -86,7 +86,7 @@
           <div class="el-upload__text">拖拽图片到此处，或 <em>点击上传</em></div>
           <template #tip>
             <div class="el-upload__tip text-gray-500 text-sm">
-              支持 JPG、PNG 格式，最多上传 {{ maxCount }} 张，单张最大 5MB
+              支持 JPG、PNG 格式，最多上传 {{ maxCount }} 张，单张最大 {{ props.maxSize }}MB
             </div>
           </template>
         </el-upload>
@@ -104,6 +104,7 @@
 </template>
 
 <script setup>
+import { isImageFileTooLarge, normalizeImageModelValue } from './imageUploadUtils'
 import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 import { Delete, UploadFilled } from '@element-plus/icons-vue'
@@ -123,6 +124,10 @@ const props = defineProps({
     type: Number,
     default: 1,
   },
+  maxSize: {
+    type: Number,
+    default: 5,
+  },
 })
 
 const emit = defineEmits(['update:modelValue', 'upload-success'])
@@ -135,11 +140,7 @@ const rootRef = ref(null)
 // 图片列表
 const imageList = computed({
   get() {
-    if (props.multiple || props.maxCount > 1) {
-      return Array.isArray(props.modelValue) ? props.modelValue : []
-    } else {
-      return props.modelValue ? [props.modelValue] : []
-    }
+    return normalizeImageModelValue(props.modelValue, props.multiple, props.maxCount)
   },
   set(value) {
     if (props.multiple || props.maxCount > 1) {
@@ -161,9 +162,9 @@ const handleUpload = async (uploadFile) => {
     return
   }
 
-  // 检查文件大小 (5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    ElMessage.error('图片大小不能超过 5MB')
+  // 检查文件大小
+  if (isImageFileTooLarge(file, props.maxSize)) {
+    ElMessage.error(`图片大小不能超过 ${props.maxSize}MB`)
     return
   }
 

@@ -99,6 +99,7 @@
               v-model="store.imageToImageParams.image_input"
               :max-count="1"
               :multiple="false"
+              :max-size="50"
             />
           </div>
 
@@ -141,6 +142,7 @@
               v-model="store.imageEditParams.image_input"
               :max-count="1"
               :multiple="false"
+              :max-size="50"
             />
           </div>
 
@@ -174,6 +176,7 @@
               v-model="store.imageEffectsParams.image_input"
               :max-count="1"
               :multiple="false"
+              :max-size="50"
             />
           </div>
 
@@ -274,6 +277,7 @@
               v-model="store.imageToVideoParams.image_input"
               :max-count="2"
               :multiple="true"
+              :max-size="50"
             />
           </div>
 

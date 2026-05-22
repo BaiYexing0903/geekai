@@ -59,6 +59,7 @@
                 v-model="jimengStore.imageToImageParams.image_input"
                 :max-count="1"
                 :multiple="false"
+                :max-size="50"
               />
             </div>
 
@@ -126,6 +127,7 @@
                 v-model="jimengStore.imageEditParams.image_input"
                 :max-count="1"
                 :multiple="true"
+                :max-size="50"
               />
             </div>
 
@@ -157,6 +159,7 @@
                 v-model="jimengStore.imageEffectsParams.image_input"
                 :max-count="1"
                 :multiple="true"
+                :max-size="50"
               />
             </div>
 
@@ -229,6 +232,7 @@
                 v-model="jimengStore.imageToVideoParams.image_input"
                 :max-count="2"
                 :multiple="true"
+                :max-size="50"
               />
             </div>
 
