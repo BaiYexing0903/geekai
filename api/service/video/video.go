@@ -739,8 +739,16 @@ func (s *Service) VeoCreate(task types.VideoTask) (VeoCreateResp, error) {
 		return VeoCreateResp{}, fmt.Errorf("failed to unmarshal params: %v", err)
 	}
 
+	modelName := params.Model
+	switch modelName {
+	case "veo3.1-4k":
+		modelName = "veo3.1-pro-4k"
+	case "veo_3_1-fast-4K":
+		modelName = "veo3.1-fast"
+	}
+
 	payload := map[string]interface{}{
-		"model":        params.Model,
+		"model":        modelName,
 		"prompt":       task.Prompt,
 		"aspect_ratio": params.AspectRatio,
 		"resolution":   params.Resolution,

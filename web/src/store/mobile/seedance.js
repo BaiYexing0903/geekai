@@ -117,7 +117,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     }
   }
 
-  const fetchVeoData = async (pageNum = 1) => {
+  const fetchVeoData = async (pageNum = 1, mergeExisting = false) => {
     try {
       listLoading.value = true
       page.value = pageNum
@@ -128,6 +128,13 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         video_url: item.video_url || item.water_url,
       }))
       if (items.length < pageSize.value) listFinished.value = true
+      if (mergeExisting && pageNum === 1) {
+        currentList.value.forEach((item) => {
+          const found = items.find((i) => i.id === item.id)
+          if (found) Object.assign(item, found)
+        })
+        return
+      }
       if (pageNum === 1) {
         currentList.value = items
       } else {

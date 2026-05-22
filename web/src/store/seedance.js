@@ -255,7 +255,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     }
   }
 
-  const fetchVeoData = async (pageNum = 1) => {
+  const fetchVeoData = async (pageNum = 1, mergeExisting = false) => {
     try {
       loading.value = true
       page.value = pageNum
@@ -273,6 +273,13 @@ export const useSeedanceStore = defineStore('seedance', () => {
       }))
       total.value = data.total || 0
       isOver.value = items.length < pageSize.value
+      if (mergeExisting && pageNum === 1) {
+        currentList.value.forEach((item) => {
+          const found = items.find((i) => i.id === item.id)
+          if (found) Object.assign(item, found)
+        })
+        return
+      }
       if (pageNum === 1) {
         currentList.value = items
       } else {
@@ -296,7 +303,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     if (pollHandler) clearInterval(pollHandler)
     pollHandler = setInterval(async () => {
       if (isVeo.value) {
-        await fetchData(1)
+        await fetchVeoData(1, true)
         const todoList = currentList.value.filter((i) => i.status === 'queued' || i.status === 'running')
         if (todoList.length === 0) stopPolling()
         return
