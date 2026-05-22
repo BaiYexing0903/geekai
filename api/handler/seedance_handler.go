@@ -99,26 +99,51 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 	// 获取配置
 	config := h.App.SysConfig.Seedance
 
-	// 确定模型
+	// 确定模型和每秒单价
 	modelId := config.ModelFast
+	var priceMap map[string]int
 	if req.Model == "standard" {
 		modelId = config.ModelStd
+		priceMap = config.Power.VipPrice
+	} else {
+		priceMap = config.Power.FastPrice
+	}
+	if priceMap == nil {
+		priceMap = make(map[string]int)
+	}
+	resolution := req.Resolution
+	if resolution == "" {
+		resolution = "720p"
+	}
+	perSecond := priceMap[resolution]
+	if perSecond <= 0 {
+		perSecond = priceMap["720p"]
+		if perSecond <= 0 {
+			perSecond = 1
+		}
 	}
 
-	// 确定算力消耗和模式
-	var powerCost int
+	// 计算算力：模型每秒单价 × 时长
+	if perSecond <= 0 {
+		perSecond = 1
+	}
+	duration := req.Duration
+	if duration <= 0 {
+		duration = 5
+	}
+	powerCost := perSecond * duration
+
+	// 确定模式
 	var mode model.SDTaskMode
 	var content []seedance.ContentItem
 
 	switch req.TaskType {
 	case "text_to_video":
 		mode = model.SDModeTextToVideo
-		powerCost = config.Power.TextToVideo
 		content = append(content, seedance.ContentItem{Type: "text", Text: req.Prompt})
 
 	case "image_to_video_first":
 		mode = model.SDModeImageToVideoFirst
-		powerCost = config.Power.ImageToVideoFirst
 		if req.FirstFrameURL == "" {
 			resp.ERROR(c, "请上传首帧图片")
 			return
@@ -132,7 +157,6 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 
 	case "image_to_video_dual":
 		mode = model.SDModeImageToVideoDual
-		powerCost = config.Power.ImageToVideoDual
 		if req.FirstFrameURL == "" || req.LastFrameURL == "" {
 			resp.ERROR(c, "请上传首帧和尾帧图片")
 			return
@@ -147,7 +171,6 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 
 	case "multimodal_ref":
 		mode = model.SDModeMultimodalRef
-		powerCost = config.Power.MultimodalRef
 		for _, url := range req.ImageUrls {
 			content = append(content, seedance.ContentItem{Type: "image_url", ImageURL: &seedance.URLField{URL: url}, Role: "reference_image"})
 		}
@@ -163,7 +186,6 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 
 	case "edit_video":
 		mode = model.SDModeEditVideo
-		powerCost = config.Power.EditVideo
 		if req.RefVideoURL == "" {
 			resp.ERROR(c, "请上传参考视频")
 			return
@@ -176,7 +198,6 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 
 	case "extend_video":
 		mode = model.SDModeExtendVideo
-		powerCost = config.Power.ExtendVideo
 		if len(req.VideoUrls) == 0 {
 			resp.ERROR(c, "请上传参考视频")
 			return
@@ -190,7 +211,6 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 
 	case "virtual_avatar":
 		mode = model.SDModeVirtualAvatar
-		powerCost = config.Power.VirtualAvatar
 		if req.AssetId == "" {
 			resp.ERROR(c, "请选择虚拟人像")
 			return

@@ -23,28 +23,27 @@
     </div>
 
     <div class="config-section">
-      <h3>算力配置</h3>
-      <el-form :model="config.power" label-width="140px">
-        <el-form-item label="文生视频">
-          <el-input-number v-model="config.power.text_to_video" :min="0" />
+      <h3>算力配置（按模型 × 分辨率 × 时长秒数计费）</h3>
+      <el-form label-width="220px">
+        <el-divider content-position="left">Seedance 2.0 Fast 每秒算力</el-divider>
+        <el-form-item label="480p">
+          <el-input-number v-model="config.power.fast_price['480p']" :min="1" />
         </el-form-item>
-        <el-form-item label="图生视频-首帧">
-          <el-input-number v-model="config.power.image_to_video_first" :min="0" />
+        <el-form-item label="720p">
+          <el-input-number v-model="config.power.fast_price['720p']" :min="1" />
         </el-form-item>
-        <el-form-item label="图生视频-首尾帧">
-          <el-input-number v-model="config.power.image_to_video_dual" :min="0" />
+        <el-form-item label="1080p">
+          <el-input-number v-model="config.power.fast_price['1080p']" :min="1" />
         </el-form-item>
-        <el-form-item label="多模态参考">
-          <el-input-number v-model="config.power.multimodal_ref" :min="0" />
+        <el-divider content-position="left">Seedance 2.0 VIP 每秒算力</el-divider>
+        <el-form-item label="480p">
+          <el-input-number v-model="config.power.vip_price['480p']" :min="1" />
         </el-form-item>
-        <el-form-item label="编辑视频">
-          <el-input-number v-model="config.power.edit_video" :min="0" />
+        <el-form-item label="720p">
+          <el-input-number v-model="config.power.vip_price['720p']" :min="1" />
         </el-form-item>
-        <el-form-item label="延长视频">
-          <el-input-number v-model="config.power.extend_video" :min="0" />
-        </el-form-item>
-        <el-form-item label="虚拟人像">
-          <el-input-number v-model="config.power.virtual_avatar" :min="0" />
+        <el-form-item label="1080p">
+          <el-input-number v-model="config.power.vip_price['1080p']" :min="1" />
         </el-form-item>
       </el-form>
     </div>
@@ -67,13 +66,8 @@ const config = reactive({
   model_fast: 'ep-20260307130821-xw5wf',
   model_std: 'ep-20260307130721-bx7tv',
   power: {
-    text_to_video: 30,
-    image_to_video_first: 35,
-    image_to_video_dual: 40,
-    multimodal_ref: 50,
-    edit_video: 45,
-    extend_video: 50,
-    virtual_avatar: 35,
+    fast_price: { '480p': 3, '720p': 5, '1080p': 8 },
+    vip_price: { '480p': 5, '720p': 8, '1080p': 12 },
   },
 })
 

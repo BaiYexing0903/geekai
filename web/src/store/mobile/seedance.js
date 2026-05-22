@@ -47,7 +47,16 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const virtualAvatarParams = reactive({ model: 'fast', asset_id: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
 
   const currentMode = computed(() => modes.find((m) => m.key === activeMode.value) || modes[0])
-  const currentPowerCost = computed(() => powerConfig[activeMode.value] || 10)
+  const currentPowerCost = computed(() => {
+    const p = getParams()
+    const model = p?.model || 'fast'
+    const resolution = p?.resolution || '720p'
+    const duration = p?.duration || 5
+    const effectiveDuration = duration <= 0 ? 5 : duration
+    const priceMap = model === 'standard' ? powerConfig.vip_price : powerConfig.fast_price
+    const perSecond = priceMap?.[resolution] || priceMap?.['720p'] || 1
+    return perSecond * effectiveDuration
+  })
 
   const init = async () => {
     try {

@@ -134,9 +134,28 @@ export const useSeedanceStore = defineStore('seedance', () => {
 
   const currentMode = computed(() => modes.find((m) => m.key === activeMode.value) || modes[0])
   const currentPowerCost = computed(() => {
-    if (!powerConfig[activeMode.value]) return 10
-    return powerConfig[activeMode.value]
+    const p = getStoreParams()
+    const model = p?.model || 'fast'
+    const resolution = p?.resolution || '720p'
+    const duration = p?.duration || 5
+    const effectiveDuration = duration <= 0 ? 5 : duration
+    const priceMap = model === 'standard' ? powerConfig.vip_price : powerConfig.fast_price
+    const perSecond = priceMap?.[resolution] || priceMap?.['720p'] || 1
+    return perSecond * effectiveDuration
   })
+
+  function getStoreParams() {
+    switch (activeMode.value) {
+      case 'text_to_video': return textToVideoParams
+      case 'image_to_video_first': return imageToVideoFirstParams
+      case 'image_to_video_dual': return imageToVideoDualParams
+      case 'multimodal_ref': return multimodalRefParams
+      case 'edit_video': return editVideoParams
+      case 'extend_video': return extendVideoParams
+      case 'virtual_avatar': return virtualAvatarParams
+      default: return textToVideoParams
+    }
+  }
 
   const init = async () => {
     try {

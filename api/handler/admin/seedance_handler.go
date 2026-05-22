@@ -173,14 +173,9 @@ func (h *SeedanceHandler) UpdateConfig(c *gin.Context) {
 		BearerToken string `json:"bearer_token"`
 		ModelFast   string `json:"model_fast"`
 		ModelStd    string `json:"model_std"`
-		Power       struct {
-			TextToVideo       int `json:"text_to_video"`
-			ImageToVideoFirst int `json:"image_to_video_first"`
-			ImageToVideoDual  int `json:"image_to_video_dual"`
-			MultimodalRef     int `json:"multimodal_ref"`
-			EditVideo         int `json:"edit_video"`
-			ExtendVideo       int `json:"extend_video"`
-			VirtualAvatar     int `json:"virtual_avatar"`
+	Power       struct {
+			FastPrice map[string]int `json:"fast_price"`
+			VipPrice  map[string]int `json:"vip_price"`
 		} `json:"power"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -193,7 +188,7 @@ func (h *SeedanceHandler) UpdateConfig(c *gin.Context) {
 		BearerToken: req.BearerToken,
 		ModelFast:   req.ModelFast,
 		ModelStd:    req.ModelStd,
-		Power:       types.SeedancePower(req.Power),
+		Power:       types.SeedancePower{FastPrice: req.Power.FastPrice, VipPrice: req.Power.VipPrice},
 	}
 
 	configValue := utils.JsonEncode(config)

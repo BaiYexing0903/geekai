@@ -9,11 +9,6 @@ type SeedanceConfig struct {
 }
 
 type SeedancePower struct {
-	TextToVideo       int `json:"text_to_video"`
-	ImageToVideoFirst int `json:"image_to_video_first"`
-	ImageToVideoDual  int `json:"image_to_video_dual"`
-	MultimodalRef     int `json:"multimodal_ref"`
-	EditVideo         int `json:"edit_video"`
-	ExtendVideo       int `json:"extend_video"`
-	VirtualAvatar     int `json:"virtual_avatar"`
+	FastPrice map[string]int `json:"fast_price"` // 分辨率 → 每秒算力，如 {"480p":3, "720p":5, "1080p":8}
+	VipPrice  map[string]int `json:"vip_price"`  // 分辨率 → 每秒算力
 }
