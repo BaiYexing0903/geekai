@@ -372,8 +372,8 @@ watch(
 const login = ref(props.active === 'login')
 const loginActiveName = ref('account') // 新增：登录标签页激活状态
 const data = ref({
-  username: import.meta.env.VITE_USER,
-  password: import.meta.env.VITE_PASS,
+  username: '',
+  password: '',
   mobile: '',
   email: '',
   repass: '',
