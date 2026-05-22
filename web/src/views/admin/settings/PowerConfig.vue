@@ -92,6 +92,30 @@
               </el-col>
             </el-row>
           </el-form-item>
+          <el-form-item>
+            <template #label>
+              <div class="label-title">
+                Veo 算力
+                <el-tooltip
+                  effect="dark"
+                  content="Veo 按模型、分辨率和时长配置算力"
+                  raw-content
+                  placement="right"
+                >
+                  <el-icon>
+                    <InfoFilled />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+            <el-row :gutter="20" v-if="system['veo_powers']">
+              <el-col :span="6" v-for="[key] in Object.entries(system['veo_powers'])" :key="key">
+                <el-form-item :label="key" label-position="left">
+                  <el-input v-model.number="system['veo_powers'][key]" size="small" />
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form-item>
         </div>
 
         <div style="padding: 10px">
@@ -132,6 +156,14 @@ onMounted(() => {
         'kling-v1_pro_5': 420,
         'kling-v1_pro_10': 840,
       }
+      system.value.veo_powers = system.value.veo_powers || {
+        'veo3.1-4k_4k_8': 0,
+        'veo3.1-4k_1080p_8': 0,
+        'veo3.1-4k_720p_8': 0,
+        'veo_3_1-fast-4K_4k_8': 0,
+        'veo_3_1-fast-4K_1080p_8': 0,
+        'veo_3_1-fast-4K_720p_8': 0,
+      }
     })
     .catch((e) => {
       ElMessage.error('加载系统配置失败: ' + e.message)
@@ -152,6 +184,7 @@ const save = function () {
         suno_power: system.value.suno_power,
         luma_power: system.value.luma_power,
         keling_powers: system.value.keling_powers,
+        veo_powers: system.value.veo_powers,
       })
         .then(() => {
           ElMessage.success('操作成功！')

@@ -9,9 +9,10 @@
           <span class="label">模型：</span>
         </div>
         <div class="param-line">
-          <el-radio-group v-model="currentModel" size="small">
-            <el-radio-button value="fast">Seedance 2.0 Fast</el-radio-button>
-            <el-radio-button value="standard">Seedance 2.0</el-radio-button>
+          <el-radio-group v-model="store.selectedModel" size="small" @change="onModelChange">
+            <el-radio-button v-for="model in store.videoModels" :key="model.value" :value="model.value">
+              {{ model.label }}
+            </el-radio-button>
           </el-radio-group>
         </div>
 
@@ -34,6 +35,16 @@
         <div class="param-line pt"><span class="label">参考素材：</span></div>
         <div class="param-line">
           <FileUpload
+            v-if="store.isVeo"
+            v-model="store.veoParams.images"
+            accept="image/*"
+            multiple
+            :maxCount="2"
+            placeholder="上传首帧/尾帧图片，不上传则为文生视频"
+            tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
+          />
+          <FileUpload
+            v-else
             v-model="store.multimodalRefParams.reference_urls"
             accept="image/*,video/*,audio/*"
             multiple
@@ -47,31 +58,41 @@
         <div class="param-line pt"><span class="label">分辨率：</span></div>
         <div class="param-line">
           <el-select v-model="currentResolution" placeholder="选择分辨率">
-            <el-option v-for="opt in store.resolutionOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            <el-option v-for="opt in currentResolutionOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </div>
 
         <div class="param-line pt"><span class="label">宽高比：</span></div>
         <div class="param-line">
           <el-select v-model="currentRatio" placeholder="选择宽高比">
-            <el-option v-for="opt in store.ratioOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            <el-option v-for="opt in currentRatioOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </div>
 
         <div class="param-line pt"><span class="label">时长：</span></div>
         <div class="param-line">
           <el-select v-model="currentDuration" placeholder="选择时长">
-            <el-option v-for="opt in store.durationOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+            <el-option v-for="opt in currentDurationOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
           </el-select>
         </div>
 
-        <div class="param-line">
-          <el-switch v-model="currentGenerateAudio" active-text="生成音频" inactive-text="无声" />
-        </div>
+        <template v-if="store.isVeo">
+          <div class="param-line">
+            <el-switch v-model="store.veoParams.enhance_prompt" active-text="增强提示词" inactive-text="不增强" />
+          </div>
+          <div class="param-line">
+            <el-switch v-model="store.veoParams.enable_upsample" active-text="启用超分" inactive-text="不超分" />
+          </div>
+        </template>
+        <template v-else>
+          <div class="param-line">
+            <el-switch v-model="currentGenerateAudio" active-text="生成音频" inactive-text="无声" />
+          </div>
 
-        <div class="param-line">
-          <el-switch v-model="currentWatermark" active-text="水印" inactive-text="无水印" />
-        </div>
+          <div class="param-line">
+            <el-switch v-model="currentWatermark" active-text="水印" inactive-text="无水印" />
+          </div>
+        </template>
       </div>
 
       <!-- 提交按钮 -->
@@ -199,25 +220,44 @@ const store = useSeedanceStore()
 
 const filterLabels = { all: '全部', processing: '进行中', succeeded: '已完成', failed: '失败' }
 
-// 代理当前模式的参数到响应式
+const currentResolutionOptions = computed(() => store.isVeo ? store.veoResolutionOptions : store.resolutionOptions)
+const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
+const currentDurationOptions = computed(() => store.isVeo ? store.veoDurationOptions : store.durationOptions)
+
 const currentModel = computed({
-  get: () => {
-    const p = getParams()
-    return p?.model || 'fast'
-  },
-  set: (v) => { getParams().model = v },
+  get: () => store.selectedModel,
+  set: (v) => { store.selectedModel = v },
 })
 const currentResolution = computed({
-  get: () => getParams()?.resolution || '720p',
-  set: (v) => { getParams().resolution = v },
+  get: () => store.isVeo ? store.veoParams.resolution : getParams()?.resolution || '720p',
+  set: (v) => {
+    if (store.isVeo) {
+      store.veoParams.resolution = v
+      if (v === '1080p' || v === '4k') store.veoParams.duration = '8'
+      return
+    }
+    getParams().resolution = v
+  },
 })
 const currentRatio = computed({
-  get: () => getParams()?.ratio || '16:9',
-  set: (v) => { getParams().ratio = v },
+  get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams()?.ratio || '16:9',
+  set: (v) => {
+    if (store.isVeo) {
+      store.veoParams.aspect_ratio = v
+      return
+    }
+    getParams().ratio = v
+  },
 })
 const currentDuration = computed({
-  get: () => getParams()?.duration || 5,
-  set: (v) => { getParams().duration = v },
+  get: () => store.isVeo ? store.veoParams.duration : getParams()?.duration || 5,
+  set: (v) => {
+    if (store.isVeo) {
+      store.veoParams.duration = v
+      return
+    }
+    getParams().duration = v
+  },
 })
 const currentGenerateAudio = computed({
   get: () => getParams()?.generate_audio ?? true,
@@ -239,6 +279,21 @@ function getParams() {
     case 'virtual_avatar': return store.virtualAvatarParams
     default: return store.multimodalRefParams
   }
+}
+
+function onModelChange(value) {
+  const model = store.videoModels.find((item) => item.value === value)
+  if (!model) return
+  if (model.provider === 'veo') {
+    store.veoParams.model = model.model
+    if (store.veoParams.resolution === '1080p' || store.veoParams.resolution === '4k') {
+      store.veoParams.duration = '8'
+    }
+    store.fetchData(1)
+    return
+  }
+  store.multimodalRefParams.model = model.model
+  store.fetchData(1)
 }
 
 onMounted(() => store.init())

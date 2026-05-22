@@ -188,6 +188,7 @@ const types = ref([
   { label: "Suno文生歌", value: "suno" },
   { label: "Luma视频", value: "luma" },
   { label: "可灵视频", value: "keling" },
+  { label: "Veo视频", value: "veo" },
   { label: "Realtime API", value: "realtime" },
   { label: "AI绘画", value: "aidraw" },
   { label: "语音合成", value: "tts" },

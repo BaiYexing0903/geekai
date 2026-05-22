@@ -12,8 +12,12 @@
       <div class="form-item">
         <span class="form-label">模型</span>
         <div class="model-btns">
-          <div :class="['model-btn', { active: getParams().model === 'fast' }]" @click="getParams().model = 'fast'">Seedance 2.0 Fast</div>
-          <div :class="['model-btn', { active: getParams().model === 'standard' }]" @click="getParams().model = 'standard'">Seedance 2.0</div>
+          <div
+            v-for="model in store.videoModels"
+            :key="model.value"
+            :class="['model-btn', { active: store.selectedModel === model.value }]"
+            @click="selectModel(model)"
+          >{{ model.label }}</div>
         </div>
       </div>
 
@@ -25,6 +29,15 @@
       <div class="form-item">
         <span class="form-label">参考素材</span>
         <FileUpload
+          v-if="store.isVeo"
+          v-model="store.veoParams.images"
+          accept="image/*"
+          multiple
+          :maxCount="2"
+          placeholder="上传首帧/尾帧图片，不上传则为文生视频"
+        />
+        <FileUpload
+          v-else
           v-model="store.multimodalRefParams.reference_urls"
           accept="image/*,video/*,audio/*"
           multiple
@@ -37,13 +50,40 @@
       <div class="form-item">
         <span class="form-label">宽高比</span>
         <div class="ratio-btns">
-          <div v-for="r in store.ratioOptions" :key="r.value" :class="['ratio-btn', { active: getParams().ratio === r.value }]" @click="getParams().ratio = r.value">
+          <div v-for="r in currentRatioOptions" :key="r.value" :class="['ratio-btn', { active: currentRatio === r.value }]" @click="currentRatio = r.value">
             {{ r.label }}
           </div>
         </div>
       </div>
 
-      <div class="form-item">
+      <div class="form-item" v-if="store.isVeo">
+        <span class="form-label">分辨率</span>
+        <div class="ratio-btns">
+          <div v-for="r in store.veoResolutionOptions" :key="r.value" :class="['ratio-btn', { active: store.veoParams.resolution === r.value }]" @click="setVeoResolution(r.value)">
+            {{ r.label }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-item" v-if="store.isVeo">
+        <span class="form-label">时长</span>
+        <div class="ratio-btns">
+          <div v-for="r in store.veoDurationOptions" :key="r.value" :class="['ratio-btn', { active: store.veoParams.duration === r.value }]" @click="store.veoParams.duration = r.value">
+            {{ r.label }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-item" v-if="store.isVeo">
+        <van-field name="enhance" label="增强提示词">
+          <template #input><van-switch v-model="store.veoParams.enhance_prompt" size="20px" /></template>
+        </van-field>
+        <van-field name="upsample" label="启用超分">
+          <template #input><van-switch v-model="store.veoParams.enable_upsample" size="20px" /></template>
+        </van-field>
+      </div>
+
+      <div class="form-item" v-if="!store.isVeo">
         <van-field name="switch" label="生成音频">
           <template #input><van-switch v-model="getParams().generate_audio" size="20px" /></template>
         </van-field>
@@ -95,11 +135,38 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
 
 const store = useSeedanceStore()
+
+const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
+const currentRatio = computed({
+  get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,
+  set: (value) => {
+    if (store.isVeo) {
+      store.veoParams.aspect_ratio = value
+    } else {
+      getParams().ratio = value
+    }
+  },
+})
+
+function selectModel(model) {
+  store.selectedModel = model.value
+  if (model.provider === 'veo') {
+    store.veoParams.model = model.model
+  } else {
+    store.multimodalRefParams.model = model.model
+  }
+  store.fetchData(1)
+}
+
+function setVeoResolution(value) {
+  store.veoParams.resolution = value
+  if (value === '1080p' || value === '4k') store.veoParams.duration = '8'
+}
 
 function getParams() {
   switch (store.activeMode) {

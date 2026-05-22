@@ -20,6 +20,7 @@ import (
 	"geekai/store/vo"
 	"geekai/utils"
 	"geekai/utils/resp"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -56,6 +57,7 @@ func (h *VideoHandler) RegisterRoutes() {
 	{
 		group.POST("luma/create", h.LumaCreate)
 		group.POST("keling/create", h.KeLingCreate)
+		group.POST("veo/create", h.VeoCreate)
 		group.GET("list", h.List)
 		group.GET("remove", h.Remove)
 		group.GET("publish", h.Publish)
@@ -257,6 +259,132 @@ func (h *VideoHandler) KeLingCreate(c *gin.Context) {
 	resp.SUCCESS(c)
 }
 
+func (h *VideoHandler) VeoCreate(c *gin.Context) {
+	var data struct {
+		Model          string   `json:"model"`
+		Prompt         string   `json:"prompt"`
+		Images         []string `json:"images"`
+		AspectRatio    string   `json:"aspect_ratio"`
+		Resolution     string   `json:"resolution"`
+		Duration       string   `json:"duration"`
+		EnhancePrompt  bool     `json:"enhance_prompt"`
+		EnableUpsample bool     `json:"enable_upsample"`
+	}
+	if err := c.ShouldBindJSON(&data); err != nil {
+		resp.ERROR(c, types.InvalidArgs)
+		return
+	}
+
+	data.Prompt = strings.TrimSpace(data.Prompt)
+	if data.Prompt == "" {
+		resp.ERROR(c, "prompt is needed")
+		return
+	}
+	if strings.TrimSpace(data.Model) == "" {
+		resp.ERROR(c, "model is needed")
+		return
+	}
+	if len(data.Images) > 2 {
+		resp.ERROR(c, "最多支持两张参考图片")
+		return
+	}
+
+	if data.AspectRatio == "" {
+		data.AspectRatio = "16:9"
+	}
+	if data.AspectRatio != "16:9" && data.AspectRatio != "9:16" {
+		resp.ERROR(c, "不支持的画面比例")
+		return
+	}
+
+	if data.Resolution == "" {
+		data.Resolution = "4k"
+	}
+	if data.Resolution != "720p" && data.Resolution != "1080p" && data.Resolution != "4k" {
+		resp.ERROR(c, "不支持的分辨率")
+		return
+	}
+
+	if data.Duration == "" {
+		data.Duration = "8"
+	}
+	if data.Duration != "4" && data.Duration != "6" && data.Duration != "8" {
+		resp.ERROR(c, "不支持的视频时长")
+		return
+	}
+	if data.Resolution == "1080p" || data.Resolution == "4k" {
+		data.Duration = "8"
+	}
+
+	user, err := h.GetLoginUser(c)
+	if err != nil {
+		resp.NotAuth(c)
+		return
+	}
+
+	powerKey := fmt.Sprintf("%s_%s_%s", data.Model, data.Resolution, data.Duration)
+	power := h.App.SysConfig.Base.VeoPowers[powerKey]
+	if power == 0 {
+		resp.ERROR(c, "当前模型暂不支持")
+		return
+	}
+	if user.Power < power {
+		resp.ERROR(c, "您的算力不足，请充值后再试！")
+		return
+	}
+
+	taskType := "text2video"
+	if len(data.Images) > 0 {
+		taskType = "image2video"
+	}
+
+	userId := int(h.GetLoginUserId(c))
+	params := types.VeoVideoParams{
+		TaskType:       taskType,
+		Model:          data.Model,
+		Prompt:         data.Prompt,
+		Images:         data.Images,
+		AspectRatio:    data.AspectRatio,
+		Resolution:     data.Resolution,
+		Duration:       data.Duration,
+		EnhancePrompt:  data.EnhancePrompt,
+		EnableUpsample: data.EnableUpsample,
+	}
+	task := types.VideoTask{
+		UserId:           userId,
+		Type:             types.VideoVeo,
+		Prompt:           data.Prompt,
+		Params:           params,
+		TranslateModelId: h.App.SysConfig.Base.AssistantModelId,
+	}
+	job := model.VideoJob{
+		UserId:   uint(userId),
+		Type:     types.VideoVeo,
+		Prompt:   data.Prompt,
+		Power:    power,
+		TaskInfo: utils.JsonEncode(task),
+	}
+	tx := h.DB.Create(&job)
+	if tx.Error != nil {
+		resp.ERROR(c, tx.Error.Error())
+		return
+	}
+
+	task.Id = job.Id
+	h.videoService.PushTask(task)
+
+	err = h.userService.DecreasePower(job.UserId, job.Power, model.PowerLog{
+		Type:   types.PowerConsume,
+		Model:  "veo",
+		Remark: fmt.Sprintf("Veo 视频生成，任务ID：%d", job.Id),
+	})
+	if err != nil {
+		resp.ERROR(c, err.Error())
+		return
+	}
+	resp.SUCCESS(c)
+}
+
 func (h *VideoHandler) List(c *gin.Context) {
 	userId := h.GetLoginUserId(c)
 	t := c.Query("type")
@@ -322,6 +450,30 @@ func (h *VideoHandler) List(c *gin.Context) {
 			}
 
 			// 如果视频URL不为空，则设置为生成成功
+			if item.VideoURL != "" {
+				item.Progress = 100
+			}
+		}
+		if item.Type == types.VideoVeo {
+			task := types.VideoTask{}
+			err = utils.JsonDecode(v.TaskInfo, &task)
+			if err != nil {
+				continue
+			}
+			var params types.VeoVideoParams
+			err = utils.JsonDecode(utils.JsonEncode(task.Params), &params)
+			if err != nil {
+				continue
+			}
+			item.RawData = map[string]interface{}{
+				"task_type":    params.TaskType,
+				"model":        params.Model,
+				"aspect_ratio": params.AspectRatio,
+				"resolution":   params.Resolution,
+				"duration":     params.Duration,
+				"model_name":   fmt.Sprintf("%s_%s_%s", params.Model, params.Resolution, params.Duration),
+			}
+
 			if item.VideoURL != "" {
 				item.Progress = 100
 			}

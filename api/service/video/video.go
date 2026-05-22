@@ -21,6 +21,8 @@ import (
 	"geekai/utils"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -136,6 +138,33 @@ func (s *Service) Run() {
 				// 更新任务信息
 				err = s.db.Model(&model.VideoJob{Id: task.Id}).UpdateColumns(map[string]interface{}{
 					"task_id":    r.Data.TaskID,
+					"channel":    r.Channel,
+					"prompt_ext": task.Prompt,
+				}).Error
+				if err != nil {
+					logger.Errorf("update task with error: %v", err)
+					s.PushTask(task)
+				}
+			} else if task.Type == types.VideoVeo {
+				var r VeoCreateResp
+				r, err = s.VeoCreate(task)
+				logger.Debugf("veo create task result: %+v", r)
+
+				if err != nil {
+					logger.Errorf("create task with error: %v", err)
+					err = s.db.Model(&model.VideoJob{Id: task.Id}).UpdateColumns(map[string]interface{}{
+						"err_msg":   err.Error(),
+						"progress":  service.FailTaskProgress,
+						"cover_url": "/images/failed.jpg",
+					}).Error
+					if err != nil {
+						logger.Errorf("update task with error: %v", err)
+					}
+					continue
+				}
+
+				err = s.db.Model(&model.VideoJob{Id: task.Id}).UpdateColumns(map[string]interface{}{
+					"task_id":    r.ID,
 					"channel":    r.Channel,
 					"prompt_ext": task.Prompt,
 				}).Error
@@ -300,6 +329,55 @@ func (s *Service) SyncTaskProgress() {
 						s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(map[string]interface{}{
 							"progress":  service.FailTaskProgress,
 							"err_msg":   task.TaskStatusMsg,
+							"cover_url": "/images/failed.jpg",
+						})
+					}
+				} else if job.Type == types.VideoVeo {
+					task, err := s.QueryVeoTask(job.TaskId, job.Channel)
+					if err != nil {
+						logger.Errorf("query task with error: %v", err)
+						s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(map[string]interface{}{
+							"progress":  service.FailTaskProgress,
+							"err_msg":   err.Error(),
+							"cover_url": "/images/failed.jpg",
+						})
+						continue
+					}
+
+					logger.Debugf("task: %+v", task)
+					status := strings.ToLower(task.Status)
+					if status == "completed" || status == "succeeded" || status == "success" {
+						if task.VideoURL == "" {
+							s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(map[string]interface{}{
+								"progress":  service.FailTaskProgress,
+								"err_msg":   "Veo task completed without video url",
+								"cover_url": "/images/failed.jpg",
+							})
+							continue
+						}
+						data := map[string]interface{}{
+							"progress":   102,
+							"water_url":  task.VideoURL,
+							"video_url":  task.VideoURL,
+							"raw_data":   utils.JsonEncode(task),
+							"prompt_ext": job.Prompt,
+						}
+						if task.CoverURL != "" {
+							data["cover_url"] = task.CoverURL
+						}
+						err = s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(data).Error
+						if err != nil {
+							logger.Errorf("更新数据库失败：%v", err)
+							continue
+						}
+					} else if status == "failed" || status == "fail" || status == "error" || status == "cancelled" || status == "canceled" {
+						errMsg := task.Error
+						if errMsg == "" {
+							errMsg = task.Message
+						}
+						s.db.Model(&model.VideoJob{Id: job.Id}).UpdateColumns(map[string]interface{}{
+							"progress":  service.FailTaskProgress,
+							"err_msg":   errMsg,
 							"cover_url": "/images/failed.jpg",
 						})
 					}
@@ -608,6 +686,148 @@ type CallBackVideoResult struct {
 	ID       string `json:"id"`
 	URL      string `json:"url"`
 	Duration string `json:"duration"`
+}
+
+type VeoCreateResp struct {
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	StatusUpdateTime int64  `json:"status_update_time"`
+	Channel          string `json:"channel,omitempty"`
+}
+
+type VeoQueryResp struct {
+	ID               string `json:"id"`
+	Status           string `json:"status"`
+	StatusUpdateTime int64  `json:"status_update_time"`
+	VideoURL         string `json:"video_url"`
+	CoverURL         string `json:"cover_url"`
+	Error            string `json:"error"`
+	Message          string `json:"message"`
+	RawData          any    `json:"raw_data,omitempty"`
+}
+
+func (s *Service) VeoCreate(task types.VideoTask) (VeoCreateResp, error) {
+	var apiKey model.ApiKey
+	session := s.db.Session(&gorm.Session{}).Where("type", "veo").Where("enabled", true)
+	if task.Channel != "" {
+		session = session.Where("api_url", task.Channel)
+	}
+	tx := session.Order("last_used_at DESC").First(&apiKey)
+	if tx.Error != nil {
+		return VeoCreateResp{}, errors.New("no available API KEY for veo")
+	}
+
+	paramsMap, ok := task.Params.(map[string]interface{})
+	if !ok {
+		return VeoCreateResp{}, errors.New("invalid params type for Veo video task")
+	}
+
+	paramsBytes, err := json.Marshal(paramsMap)
+	if err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to marshal params: %v", err)
+	}
+
+	var params types.VeoVideoParams
+	if err := json.Unmarshal(paramsBytes, &params); err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to unmarshal params: %v", err)
+	}
+
+	payload := map[string]interface{}{
+		"model":           params.Model,
+		"prompt":          task.Prompt,
+		"aspect_ratio":    params.AspectRatio,
+		"resolution":      params.Resolution,
+		"duration":        params.Duration,
+		"enhance_prompt":  params.EnhancePrompt,
+		"enable_upsample": params.EnableUpsample,
+	}
+	if len(params.Images) > 0 {
+		payload["images"] = params.Images
+	}
+
+	jsonPayload, err := json.Marshal(payload)
+	if err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to marshal payload: %v", err)
+	}
+
+	apiURL := strings.TrimRight(apiKey.ApiURL, "/") + "/v1/video/create"
+	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonPayload))
+	if err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to create request: %v", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey.Value)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: time.Duration(30) * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to read response: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return VeoCreateResp{}, fmt.Errorf("API error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	var apiResponse VeoCreateResp
+	if err := json.Unmarshal(body, &apiResponse); err != nil {
+		return VeoCreateResp{}, fmt.Errorf("failed to parse response: %v", err)
+	}
+	if apiResponse.ID == "" {
+		return VeoCreateResp{}, fmt.Errorf("API response missing task id: %s", string(body))
+	}
+
+	apiKey.LastUsedAt = time.Now().Unix()
+	session.Updates(&apiKey)
+	apiResponse.Channel = apiKey.ApiURL
+	return apiResponse, nil
+}
+
+func (s *Service) QueryVeoTask(taskId string, channel string) (VeoQueryResp, error) {
+	var apiKey model.ApiKey
+	session := s.db.Session(&gorm.Session{}).Where("type", "veo").Where("enabled", true)
+	if channel != "" {
+		session = session.Where("api_url", channel)
+	}
+	err := session.Order("last_used_at DESC").First(&apiKey).Error
+	if err != nil {
+		return VeoQueryResp{}, errors.New("no available API KEY for veo")
+	}
+
+	apiURL := fmt.Sprintf("%s/v1/video/query?id=%s", strings.TrimRight(apiKey.ApiURL, "/"), url.QueryEscape(taskId))
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return VeoQueryResp{}, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey.Value)
+	req.Header.Set("Accept", "application/json")
+
+	client := &http.Client{Timeout: time.Duration(30) * time.Second}
+	res, err := client.Do(req)
+	if err != nil {
+		return VeoQueryResp{}, fmt.Errorf("failed to execute request: %w", err)
+	}
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return VeoQueryResp{}, fmt.Errorf("failed to read response body: %w", err)
+	}
+	if res.StatusCode != http.StatusOK {
+		return VeoQueryResp{}, fmt.Errorf("unexpected status code: %d, %s", res.StatusCode, string(body))
+	}
+
+	var response VeoQueryResp
+	if err := json.Unmarshal(body, &response); err != nil {
+		return VeoQueryResp{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	response.RawData = json.RawMessage(body)
+	return response, nil
 }
 
 func (s *Service) QueryKeLingTask(taskId string, channel string, action string) (VideoCallbackData, error) {

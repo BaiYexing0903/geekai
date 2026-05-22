@@ -19,17 +19,41 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const isLogin = ref(false)
   const userPower = ref(100)
   const currentPrompt = ref('')
+  const selectedModel = ref('seedance-fast')
   const powerConfig = reactive({})
   const showVideoDialog = ref(false)
   const currentVideoUrl = ref('')
 
   const modes = seedanceModes
 
+  const videoModels = [
+    { label: 'Seedance Fast', value: 'seedance-fast', provider: 'seedance', model: 'fast' },
+    { label: 'Seedance 2.0', value: 'seedance-standard', provider: 'seedance', model: 'standard' },
+    { label: 'Veo 3.1 4K', value: 'veo3.1-4k', provider: 'veo', model: 'veo3.1-4k' },
+    { label: 'Veo Fast 4K', value: 'veo_3_1-fast-4K', provider: 'veo', model: 'veo_3_1-fast-4K' },
+  ]
+  const currentModelConfig = computed(() => videoModels.find((m) => m.value === selectedModel.value) || videoModels[0])
+  const isVeo = computed(() => currentModelConfig.value.provider === 'veo')
+
   const ratioOptions = [
     { label: '自适应', value: 'adaptive' },
     { label: '16:9', value: '16:9' },
     { label: '9:16', value: '9:16' },
     { label: '1:1', value: '1:1' },
+  ]
+  const veoRatioOptions = [
+    { label: '16:9', value: '16:9' },
+    { label: '9:16', value: '9:16' },
+  ]
+  const veoResolutionOptions = [
+    { label: '720p', value: '720p' },
+    { label: '1080p', value: '1080p' },
+    { label: '4k', value: '4k' },
+  ]
+  const veoDurationOptions = [
+    { label: '4秒', value: '4' },
+    { label: '6秒', value: '6' },
+    { label: '8秒', value: '8' },
   ]
 
   const textToVideoParams = reactive({ model: 'fast', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
@@ -39,9 +63,14 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const editVideoParams = reactive({ model: 'fast', ref_video_url: '', ref_image_url: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const extendVideoParams = reactive({ model: 'fast', video_urls: [], resolution: '720p', ratio: '16:9', duration: 8, generate_audio: true, watermark: false })
   const virtualAvatarParams = reactive({ model: 'fast', asset_id: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
+  const veoParams = reactive({ model: 'veo3.1-4k', images: [], resolution: '4k', aspect_ratio: '16:9', duration: '8', enhance_prompt: true, enable_upsample: true })
 
   const currentMode = computed(() => modes.find((m) => m.key === activeMode.value) || modes[0])
   const currentPowerCost = computed(() => {
+    if (isVeo.value) {
+      const key = `${veoParams.model}_${veoParams.resolution}_${veoParams.duration}`
+      return powerConfig.veo_powers?.[key] || 0
+    }
     const p = getParams()
     const model = p?.model || 'fast'
     const resolution = p?.resolution || '720p'
@@ -56,6 +85,8 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     try {
       const powerRes = await httpGet('/api/seedance/power-config')
       if (powerRes.data) Object.assign(powerConfig, powerRes.data)
+      const systemRes = await httpGet('/api/config/get?key=system')
+      if (systemRes.data?.veo_powers) powerConfig.veo_powers = systemRes.data.veo_powers
       const user = await checkSession()
       isLogin.value = true
       userPower.value = user.power
@@ -69,11 +100,38 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const getStatusText = (s) => ({ queued: '排队中', running: '生成中', succeeded: '已完成', failed: '失败', expired: '已过期' }[s] || s)
 
   const fetchData = async (pageNum = 1) => {
+    if (isVeo.value) {
+      await fetchVeoData(pageNum)
+      return
+    }
     try {
       listLoading.value = true
       page.value = pageNum
       const res = await httpPost('/api/seedance/jobs', { page: pageNum, page_size: pageSize.value })
       const items = res.data?.items || []
+      if (items.length < pageSize.value) listFinished.value = true
+      if (pageNum === 1) {
+        currentList.value = items
+      } else {
+        currentList.value.push(...items)
+      }
+    } catch (e) {
+      showMessageError('获取列表失败')
+    } finally {
+      listLoading.value = false
+    }
+  }
+
+  const fetchVeoData = async (pageNum = 1) => {
+    try {
+      listLoading.value = true
+      page.value = pageNum
+      const res = await httpGet('/api/video/list', { type: 'veo', page: pageNum, page_size: pageSize.value })
+      const items = (res.data?.items || []).map((item) => ({
+        ...item,
+        status: item.progress === 100 ? 'succeeded' : item.progress < 0 ? 'failed' : 'running',
+        video_url: item.video_url || item.water_url,
+      }))
       if (items.length < pageSize.value) listFinished.value = true
       if (pageNum === 1) {
         currentList.value = items
@@ -94,6 +152,24 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     }
     try {
       submitting.value = true
+      if (isVeo.value) {
+        const res = await httpPost('/api/video/veo/create', {
+          model: veoParams.model,
+          prompt: currentPrompt.value,
+          images: veoParams.images,
+          aspect_ratio: veoParams.aspect_ratio,
+          resolution: veoParams.resolution,
+          duration: veoParams.duration,
+          enhance_prompt: veoParams.enhance_prompt,
+          enable_upsample: veoParams.enable_upsample,
+        })
+        if (res.data) {
+          showMessageOK('任务提交成功')
+          listFinished.value = false
+          await fetchData(1)
+        }
+        return
+      }
       const p = getParams()
       const req = {
         task_type: activeMode.value,
@@ -149,7 +225,9 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
 
   const removeJob = async (item) => {
     try {
-      const res = await httpGet('/api/seedance/remove', { id: item.id })
+      const res = isVeo.value
+        ? await httpGet('/api/video/remove', { id: item.id })
+        : await httpGet('/api/seedance/remove', { id: item.id })
       if (res.data) {
         showMessageOK('删除成功')
         await fetchData(1)
@@ -178,10 +256,10 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
 
   return {
     activeMode, loading, submitting, currentList, listLoading, listFinished,
-    isLogin, userPower, currentPrompt, powerConfig, showVideoDialog, currentVideoUrl,
-    modes, ratioOptions,
+    isLogin, userPower, currentPrompt, selectedModel, powerConfig, showVideoDialog, currentVideoUrl,
+    modes, videoModels, currentModelConfig, isVeo, ratioOptions, veoRatioOptions, veoResolutionOptions, veoDurationOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
-    multimodalRefParams, editVideoParams, extendVideoParams, virtualAvatarParams,
+    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
     init, switchMode: (m) => { activeMode.value = m }, getModeName, getStatusText,
     fetchData, submitTask, removeJob, retryTask, playVideo,

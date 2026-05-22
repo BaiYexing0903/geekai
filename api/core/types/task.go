@@ -90,13 +90,13 @@ type AiDrawTask struct {
 	UserId           uint     `json:"user_id"`
 	ModelId          uint     `json:"model_id"`
 	ModelName        string   `json:"model_name"`
-	Mode             string   `json:"mode"`              // text_to_image 或 image_to_image
+	Mode             string   `json:"mode"` // text_to_image 或 image_to_image
 	Prompt           string   `json:"prompt"`
-	Images           []string `json:"images,omitempty"`  // 图生图参考图片URL
-	AspectRatio      string   `json:"aspect_ratio"`      // Gemini 宽高比
-	ImageSize        string   `json:"image_size"`        // Gemini 分辨率
-	Quality          string   `json:"quality"`           // GPT-Image-2 质量
-	Size             string   `json:"size"`              // GPT-Image-2 尺寸
+	Images           []string `json:"images,omitempty"` // 图生图参考图片URL
+	AspectRatio      string   `json:"aspect_ratio"`     // Gemini 宽高比
+	ImageSize        string   `json:"image_size"`       // Gemini 分辨率
+	Quality          string   `json:"quality"`          // GPT-Image-2 质量
+	Size             string   `json:"size"`             // GPT-Image-2 尺寸
 	Power            int      `json:"power"`
 	TranslateModelId int      `json:"translate_model_id"`
 }
@@ -124,6 +124,7 @@ const (
 	VideoRunway = "runway"
 	VideoCog    = "cog"
 	VideoKeLing = "keling"
+	VideoVeo    = "veo"
 )
 
 type VideoTask struct {
@@ -160,6 +161,18 @@ type KeLingVideoParams struct {
 	CameraControl CameraControl `json:"camera_control"`  // 摄像机控制
 	Image         string        `json:"image"`           // 参考图片URL(image2video)
 	ImageTail     string        `json:"image_tail"`      // 尾帧图片URL(image2video)
+}
+
+type VeoVideoParams struct {
+	TaskType       string   `json:"task_type"`
+	Model          string   `json:"model"`
+	Prompt         string   `json:"prompt"`
+	Images         []string `json:"images,omitempty"`
+	AspectRatio    string   `json:"aspect_ratio"`
+	Resolution     string   `json:"resolution,omitempty"`
+	Duration       string   `json:"duration,omitempty"`
+	EnhancePrompt  bool     `json:"enhance_prompt"`
+	EnableUpsample bool     `json:"enable_upsample"`
 }
 
 // CameraControl 摄像机控制

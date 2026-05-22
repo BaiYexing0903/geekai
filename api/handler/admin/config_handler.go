@@ -98,8 +98,6 @@ func (h *ConfigHandler) UpdateBase(c *gin.Context) {
 		return
 	}
 
-
-
 	err := h.Update(types.ConfigKeySystem, data)
 	if err != nil {
 		resp.ERROR(c, err.Error())
@@ -123,6 +121,7 @@ func (h *ConfigHandler) UpdatePower(c *gin.Context) {
 		SunoPower     int            `json:"suno_power,omitempty"`      // Suno 生成歌曲消耗算力
 		LumaPower     int            `json:"luma_power,omitempty"`      // Luma 生成视频消耗算力
 		KeLingPowers  map[string]int `json:"keling_powers,omitempty"`   // 可灵生成视频消耗算力
+		VeoPowers     map[string]int `json:"veo_powers,omitempty"`      // Veo 生成视频消耗算力
 	}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		resp.ERROR(c, types.InvalidArgs)
@@ -138,6 +137,7 @@ func (h *ConfigHandler) UpdatePower(c *gin.Context) {
 	h.sysConfig.Base.SunoPower = data.SunoPower
 	h.sysConfig.Base.LumaPower = data.LumaPower
 	h.sysConfig.Base.KeLingPowers = data.KeLingPowers
+	h.sysConfig.Base.VeoPowers = data.VeoPowers
 
 	err := h.Update(types.ConfigKeySystem, h.sysConfig.Base)
 	if err != nil {
