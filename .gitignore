@@ -28,8 +28,12 @@ config.toml
 config/config.yaml
 
 # Dependencies
+node_modules/
 web/node_modules/
 api/vendor/
+
+# Generated docs
+docs/superpowers/
 
 # Build output
 web/dist/

@@ -68,6 +68,19 @@ func isSeedanceTaskTypeAllowed(taskType string) bool {
 	return taskType == string(model.SDModeMultimodalRef)
 }
 
+func seedanceStatusFilter(filter string) []model.SDTaskStatus {
+	switch filter {
+	case "processing":
+		return []model.SDTaskStatus{model.SDStatusQueued, model.SDStatusRunning}
+	case "succeeded":
+		return []model.SDTaskStatus{model.SDStatusSucceeded}
+	case "failed":
+		return []model.SDTaskStatus{model.SDStatusFailed, model.SDStatusExpired}
+	default:
+		return nil
+	}
+}
+
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 	var req SeedanceTaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -306,6 +319,9 @@ func (h *SeedanceHandler) Jobs(c *gin.Context) {
 
 	if len(req.Ids) > 0 {
 		query = query.Where("id IN (?)", req.Ids)
+	}
+	if statuses := seedanceStatusFilter(req.Filter); len(statuses) > 0 {
+		query = query.Where("status IN (?)", statuses)
 	}
 
 	if err := query.Count(&total).Error; err != nil {

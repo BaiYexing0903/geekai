@@ -192,6 +192,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
       const response = await httpPost('/api/seedance/jobs', {
         page: pageNum,
         page_size: pageSize.value,
+        filter: taskFilter.value,
       })
       const data = response.data
       if (!data.items || data.items.length === 0) {
