@@ -51,7 +51,6 @@ func (h *DallJobHandler) RegisterRoutes() {
 	group := h.App.Engine.Group("/api/dall/")
 
 	// 公开接口，不需要授权
-	group.GET("imgWall", h.ImgWall)
 	group.GET("models", h.GetModels)
 
 	// 需要用户授权的接口
@@ -59,6 +58,7 @@ func (h *DallJobHandler) RegisterRoutes() {
 	{
 		group.POST("image", h.Image)
 		group.GET("jobs", h.JobList)
+		group.GET("imgWall", h.ImgWall)
 		group.GET("remove", h.Remove)
 		group.GET("publish", h.Publish)
 	}
@@ -158,7 +158,8 @@ func (h *DallJobHandler) Image(c *gin.Context) {
 func (h *DallJobHandler) ImgWall(c *gin.Context) {
 	page := h.GetInt(c, "page", 0)
 	pageSize := h.GetInt(c, "page_size", 0)
-	err, jobs := h.getData(true, 0, page, pageSize, true)
+	userId := h.GetLoginUserId(c)
+	err, jobs := h.getData(true, userId, page, pageSize, true)
 	if err != nil {
 		resp.ERROR(c, err.Error())
 		return

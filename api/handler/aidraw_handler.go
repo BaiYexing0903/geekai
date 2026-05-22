@@ -20,17 +20,17 @@ import (
 
 type AiDrawHandler struct {
 	BaseHandler
-	aidrawService    *aidraw.Service
-	uploader         *oss.UploaderManager
-	userService      *service.UserService
+	aidrawService     *aidraw.Service
+	uploader          *oss.UploaderManager
+	userService       *service.UserService
 	moderationManager *moderation.ServiceManager
 }
 
 func NewAiDrawHandler(app *core.AppServer, db *gorm.DB, service *aidraw.Service, manager *oss.UploaderManager, userService *service.UserService, moderationManager *moderation.ServiceManager) *AiDrawHandler {
 	return &AiDrawHandler{
-		aidrawService:    service,
-		uploader:         manager,
-		userService:      userService,
+		aidrawService:     service,
+		uploader:          manager,
+		userService:       userService,
 		moderationManager: moderationManager,
 		BaseHandler: BaseHandler{
 			App: app,
@@ -43,12 +43,12 @@ func (h *AiDrawHandler) RegisterRoutes() {
 	group := h.App.Engine.Group("/api/aidraw/")
 
 	// 公开接口
-	group.GET("imgWall", h.ImgWall)
 	group.GET("models", h.GetModels)
 
 	// 需要用户授权的接口
 	group.Use(middleware.UserAuthMiddleware(h.App.Config.Session.SecretKey, h.App.Redis))
 	{
+		group.GET("imgWall", h.ImgWall)
 		group.POST("image", h.Image)
 		group.GET("jobs", h.JobList)
 		group.GET("remove", h.Remove)
@@ -152,7 +152,8 @@ func (h *AiDrawHandler) Image(c *gin.Context) {
 func (h *AiDrawHandler) ImgWall(c *gin.Context) {
 	page := h.GetInt(c, "page", 0)
 	pageSize := h.GetInt(c, "page_size", 0)
-	err, jobs := h.getData(true, 0, page, pageSize, true)
+	userId := h.GetLoginUserId(c)
+	err, jobs := h.getData(true, userId, page, pageSize, true)
 	if err != nil {
 		resp.ERROR(c, err.Error())
 		return

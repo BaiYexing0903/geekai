@@ -65,9 +65,6 @@ func NewSdJobHandler(app *core.AppServer,
 func (h *SdJobHandler) RegisterRoutes() {
 	group := h.App.Engine.Group("/api/sd/")
 
-	// 公开接口，不需要授权
-	group.GET("imgWall", h.ImgWall)
-
 	// 需要用户授权的接口
 	group.Use(middleware.UserAuthMiddleware(h.App.Config.Session.SecretKey, h.App.Redis))
 	{
@@ -75,6 +72,7 @@ func (h *SdJobHandler) RegisterRoutes() {
 		group.GET("jobs", h.JobList)
 		group.GET("remove", h.Remove)
 		group.GET("publish", h.Publish)
+		group.GET("imgWall", h.ImgWall)
 	}
 }
 
@@ -215,9 +213,10 @@ func (h *SdJobHandler) Image(c *gin.Context) {
 
 // ImgWall 照片墙
 func (h *SdJobHandler) ImgWall(c *gin.Context) {
+	userId := h.GetLoginUserId(c)
 	page := h.GetInt(c, "page", 0)
 	pageSize := h.GetInt(c, "page_size", 0)
-	err, jobs := h.getData(true, 0, page, pageSize, true)
+	err, jobs := h.getData(true, userId, page, pageSize, true)
 	if err != nil {
 		resp.ERROR(c, err.Error())
 		return

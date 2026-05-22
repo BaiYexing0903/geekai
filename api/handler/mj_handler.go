@@ -55,7 +55,6 @@ func (h *MidJourneyHandler) RegisterRoutes() {
 	group := h.App.Engine.Group("/api/mj/")
 
 	// 公开接口，不需要授权
-	group.GET("imgWall", h.ImgWall)
 
 	// 需要用户授权的接口
 	group.Use(middleware.UserAuthMiddleware(h.App.Config.Session.SecretKey, h.App.Redis))
@@ -66,6 +65,7 @@ func (h *MidJourneyHandler) RegisterRoutes() {
 		group.GET("jobs", h.JobList)
 		group.GET("remove", h.Remove)
 		group.GET("publish", h.Publish)
+		group.GET("imgWall", h.ImgWall)
 	}
 }
 
@@ -370,7 +370,8 @@ func (h *MidJourneyHandler) Variation(c *gin.Context) {
 func (h *MidJourneyHandler) ImgWall(c *gin.Context) {
 	page := h.GetInt(c, "page", 0)
 	pageSize := h.GetInt(c, "page_size", 0)
-	err, jobs := h.getData(true, 0, page, pageSize, true)
+	userId := h.GetLoginUserId(c)
+	err, jobs := h.getData(true, userId, page, pageSize, true)
 	if err != nil {
 		resp.ERROR(c, err.Error())
 		return
