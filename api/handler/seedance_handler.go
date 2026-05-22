@@ -64,10 +64,18 @@ type SeedanceTaskRequest struct {
 	AssetId       string   `json:"asset_id"`
 }
 
+func isSeedanceTaskTypeAllowed(taskType string) bool {
+	return taskType == string(model.SDModeMultimodalRef)
+}
+
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 	var req SeedanceTaskRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.ERROR(c, types.InvalidArgs)
+		return
+	}
+	if !isSeedanceTaskTypeAllowed(req.TaskType) {
+		resp.ERROR(c, "Seedance 仅支持多模态参考")
 		return
 	}
 

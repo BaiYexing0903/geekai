@@ -4,9 +4,10 @@ import { httpGet, httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
+import { seedanceModes } from './seedanceModes'
 
 export const useSeedanceStore = defineStore('mobile-seedance', () => {
-  const activeMode = ref('text_to_video')
+  const activeMode = ref('multimodal_ref')
   const loading = ref(false)
   const submitting = ref(false)
   const page = ref(1)
@@ -21,15 +22,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const showVideoDialog = ref(false)
   const currentVideoUrl = ref('')
 
-  const modes = [
-    { key: 'text_to_video', name: '文生视频' },
-    { key: 'image_to_video_first', name: '图生视频' },
-    { key: 'image_to_video_dual', name: '首尾帧' },
-    { key: 'multimodal_ref', name: '多模态' },
-    { key: 'edit_video', name: '编辑' },
-    { key: 'extend_video', name: '延长' },
-    { key: 'virtual_avatar', name: '虚拟人像' },
-  ]
+  const modes = seedanceModes
 
   const ratioOptions = [
     { label: '自适应', value: 'adaptive' },
@@ -94,7 +87,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   }
 
   const submitTask = async () => {
-    if (!currentPrompt.value && activeMode.value !== 'image_to_video_first') {
+    if (!currentPrompt.value) {
       showMessageError('提示词不能为空')
       return
     }
@@ -151,7 +144,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
       case 'edit_video': return editVideoParams
       case 'extend_video': return extendVideoParams
       case 'virtual_avatar': return virtualAvatarParams
-      default: return textToVideoParams
+      default: return multimodalRefParams
     }
   }
 

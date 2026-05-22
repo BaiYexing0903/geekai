@@ -6,9 +6,10 @@ import { replaceImg, substr } from '@/utils/libs'
 import { ElMessageBox } from 'element-plus'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
+import { seedanceModes } from './seedanceModes'
 
 export const useSeedanceStore = defineStore('seedance', () => {
-  const activeMode = ref('text_to_video')
+  const activeMode = ref('multimodal_ref')
   const loading = ref(false)
   const submitting = ref(false)
   const page = ref(1)
@@ -26,15 +27,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
 
   const shareStore = useSharedStore()
 
-  const modes = [
-    { key: 'text_to_video', name: '文生视频', icon: 'video', needsImage: false },
-    { key: 'image_to_video_first', name: '图生视频', icon: 'image', needsImage: true },
-    { key: 'image_to_video_dual', name: '首尾帧', icon: 'image', needsImage: true },
-    { key: 'multimodal_ref', name: '多模态', icon: 'api-key', needsImage: false },
-    { key: 'edit_video', name: '编辑视频', icon: 'edit', needsImage: true },
-    { key: 'extend_video', name: '延长视频', icon: 'extend', needsImage: true },
-    { key: 'virtual_avatar', name: '虚拟人像', icon: 'user', needsImage: false },
-  ]
+  const modes = seedanceModes
 
   const resolutionOptions = [
     { label: '480p', value: '480p' },
@@ -153,7 +146,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
       case 'edit_video': return editVideoParams
       case 'extend_video': return extendVideoParams
       case 'virtual_avatar': return virtualAvatarParams
-      default: return textToVideoParams
+      default: return multimodalRefParams
     }
   }
 
@@ -256,7 +249,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
       showMessageError('算力不足')
       return
     }
-    if (activeMode.value !== 'virtual_avatar' && !currentPrompt.value && activeMode.value !== 'image_to_video_first') {
+    if (!currentPrompt.value) {
       showMessageError('提示词不能为空')
       return
     }
