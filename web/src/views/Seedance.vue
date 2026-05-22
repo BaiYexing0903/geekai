@@ -164,7 +164,8 @@
                 <i class="iconfont icon-retry"></i>
               </el-button>
               <el-button size="small" @click="store.removeJob(item)" text type="danger">
-                <i class="iconfont icon-delete"></i>
+                <i class="iconfont icon-remove"></i>
+                <span>删除</span>
               </el-button>
             </div>
             <div class="task-time">
