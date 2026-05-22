@@ -5,6 +5,7 @@ import { replaceImg } from '@/utils/libs'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
+import { splitSeedanceReferenceUrls } from '../seedanceReferences'
 
 export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -34,7 +35,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const textToVideoParams = reactive({ model: 'fast', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const imageToVideoFirstParams = reactive({ model: 'fast', first_frame_url: '', resolution: '720p', ratio: 'adaptive', duration: 5, generate_audio: false, watermark: false })
   const imageToVideoDualParams = reactive({ model: 'fast', first_frame_url: '', last_frame_url: '', resolution: '720p', ratio: 'adaptive', duration: 5, generate_audio: false, watermark: false })
-  const multimodalRefParams = reactive({ model: 'fast', image_urls: [], video_urls: [], audio_urls: [], resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
+  const multimodalRefParams = reactive({ model: 'fast', reference_urls: [], resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const editVideoParams = reactive({ model: 'fast', ref_video_url: '', ref_image_url: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
   const extendVideoParams = reactive({ model: 'fast', video_urls: [], resolution: '720p', ratio: '16:9', duration: 8, generate_audio: true, watermark: false })
   const virtualAvatarParams = reactive({ model: 'fast', asset_id: '', resolution: '720p', ratio: '16:9', duration: 5, generate_audio: true, watermark: false })
@@ -111,9 +112,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         req.last_frame_url = imageToVideoDualParams.last_frame_url
       }
       if (activeMode.value === 'multimodal_ref') {
-        req.image_urls = multimodalRefParams.image_urls
-        req.video_urls = multimodalRefParams.video_urls
-        req.audio_urls = multimodalRefParams.audio_urls
+        Object.assign(req, splitSeedanceReferenceUrls(multimodalRefParams.reference_urls || []))
       }
       if (activeMode.value === 'edit_video') {
         req.ref_video_url = editVideoParams.ref_video_url

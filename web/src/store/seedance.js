@@ -7,6 +7,7 @@ import { ElMessageBox } from 'element-plus'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
+import { splitSeedanceReferenceUrls } from './seedanceReferences'
 
 export const useSeedanceStore = defineStore('seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -84,9 +85,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
 
   const multimodalRefParams = reactive({
     model: 'fast',
-    image_urls: [],
-    video_urls: [],
-    audio_urls: [],
+    reference_urls: [],
     resolution: '720p',
     ratio: '16:9',
     duration: 5,
@@ -256,92 +255,17 @@ export const useSeedanceStore = defineStore('seedance', () => {
 
     try {
       submitting.value = true
-      let requestData = {
+      const referenceGroups = splitSeedanceReferenceUrls(multimodalRefParams.reference_urls || [])
+      const requestData = {
         task_type: activeMode.value,
         prompt: currentPrompt.value,
-      }
-
-      switch (activeMode.value) {
-        case 'text_to_video':
-          Object.assign(requestData, {
-            model: textToVideoParams.model,
-            resolution: textToVideoParams.resolution,
-            ratio: textToVideoParams.ratio,
-            duration: textToVideoParams.duration,
-            generate_audio: textToVideoParams.generate_audio,
-            watermark: textToVideoParams.watermark,
-          })
-          break
-        case 'image_to_video_first':
-          Object.assign(requestData, {
-            model: imageToVideoFirstParams.model,
-            first_frame_url: imageToVideoFirstParams.first_frame_url,
-            resolution: imageToVideoFirstParams.resolution,
-            ratio: imageToVideoFirstParams.ratio,
-            duration: imageToVideoFirstParams.duration,
-            generate_audio: imageToVideoFirstParams.generate_audio,
-            watermark: imageToVideoFirstParams.watermark,
-          })
-          break
-        case 'image_to_video_dual':
-          Object.assign(requestData, {
-            model: imageToVideoDualParams.model,
-            first_frame_url: imageToVideoDualParams.first_frame_url,
-            last_frame_url: imageToVideoDualParams.last_frame_url,
-            resolution: imageToVideoDualParams.resolution,
-            ratio: imageToVideoDualParams.ratio,
-            duration: imageToVideoDualParams.duration,
-            generate_audio: imageToVideoDualParams.generate_audio,
-            watermark: imageToVideoDualParams.watermark,
-          })
-          break
-        case 'multimodal_ref':
-          Object.assign(requestData, {
-            model: multimodalRefParams.model,
-            image_urls: multimodalRefParams.image_urls,
-            video_urls: multimodalRefParams.video_urls,
-            audio_urls: multimodalRefParams.audio_urls,
-            resolution: multimodalRefParams.resolution,
-            ratio: multimodalRefParams.ratio,
-            duration: multimodalRefParams.duration,
-            generate_audio: multimodalRefParams.generate_audio,
-            watermark: multimodalRefParams.watermark,
-          })
-          break
-        case 'edit_video':
-          Object.assign(requestData, {
-            model: editVideoParams.model,
-            ref_video_url: editVideoParams.ref_video_url,
-            ref_image_url: editVideoParams.ref_image_url,
-            resolution: editVideoParams.resolution,
-            ratio: editVideoParams.ratio,
-            duration: editVideoParams.duration,
-            generate_audio: editVideoParams.generate_audio,
-            watermark: editVideoParams.watermark,
-          })
-          break
-        case 'extend_video':
-          Object.assign(requestData, {
-            model: extendVideoParams.model,
-            video_urls: extendVideoParams.video_urls,
-            resolution: extendVideoParams.resolution,
-            ratio: extendVideoParams.ratio,
-            duration: extendVideoParams.duration,
-            generate_audio: extendVideoParams.generate_audio,
-            watermark: extendVideoParams.watermark,
-          })
-          break
-        case 'virtual_avatar':
-          Object.assign(requestData, {
-            model: virtualAvatarParams.model,
-            asset_id: virtualAvatarParams.asset_id,
-            resolution: virtualAvatarParams.resolution,
-            ratio: virtualAvatarParams.ratio,
-            duration: virtualAvatarParams.duration,
-            generate_audio: virtualAvatarParams.generate_audio,
-            watermark: virtualAvatarParams.watermark,
-          })
-          break
+        model: multimodalRefParams.model,
+        ...referenceGroups,
+        resolution: multimodalRefParams.resolution,
+        ratio: multimodalRefParams.ratio,
+        duration: multimodalRefParams.duration,
+        generate_audio: multimodalRefParams.generate_audio,
+        watermark: multimodalRefParams.watermark,
       }
 
       const response = await httpPost('/api/seedance/task', requestData)

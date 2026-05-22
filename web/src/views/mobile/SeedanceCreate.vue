@@ -6,18 +6,6 @@
       <span></span>
     </div>
 
-    <!-- 模式选择 -->
-    <div class="mode-tabs">
-      <div
-        v-for="mode in store.modes"
-        :key="mode.key"
-        :class="['mode-tab', { active: store.activeMode === mode.key }]"
-        @click="store.switchMode(mode.key)"
-      >
-        {{ mode.name }}
-      </div>
-    </div>
-
     <!-- 参数区域 -->
     <div class="form-card">
       <!-- 模型选择 -->
@@ -25,7 +13,7 @@
         <span class="form-label">模型</span>
         <div class="model-btns">
           <div :class="['model-btn', { active: getParams().model === 'fast' }]" @click="getParams().model = 'fast'">Seedance 2.0 Fast</div>
-          <div :class="['model-btn', { active: getParams().model === 'standard' }]" @click="getParams().model = 'standard'">Seedance 2.0 VIP</div>
+          <div :class="['model-btn', { active: getParams().model === 'standard' }]" @click="getParams().model = 'standard'">Seedance 2.0</div>
         </div>
       </div>
 
@@ -34,53 +22,15 @@
         <van-field v-model="store.currentPrompt" type="textarea" rows="3" placeholder="描述你想生成的视频画面..." maxlength="1000" show-word-limit />
       </div>
 
-      <!-- 首帧图片 -->
-      <div v-if="store.activeMode === 'image_to_video_first'" class="form-item">
-        <span class="form-label">首帧图片</span>
-        <FileUpload v-model="store.imageToVideoFirstParams.first_frame_url" accept="image/*" placeholder="点击上传图片" />
-      </div>
-
-      <!-- 首尾帧 -->
-      <template v-if="store.activeMode === 'image_to_video_dual'">
-        <div class="form-item">
-          <span class="form-label">首帧图片</span>
-          <FileUpload v-model="store.imageToVideoDualParams.first_frame_url" accept="image/*" placeholder="点击上传图片" />
-        </div>
-        <div class="form-item">
-          <span class="form-label">尾帧图片</span>
-          <FileUpload v-model="store.imageToVideoDualParams.last_frame_url" accept="image/*" placeholder="点击上传图片" />
-        </div>
-      </template>
-
-      <!-- 编辑视频 -->
-      <template v-if="store.activeMode === 'edit_video'">
-        <div class="form-item">
-          <span class="form-label">参考视频</span>
-          <FileUpload v-model="store.editVideoParams.ref_video_url" accept="video/*" placeholder="点击上传视频" />
-        </div>
-        <div class="form-item">
-          <span class="form-label">参考图片</span>
-          <FileUpload v-model="store.editVideoParams.ref_image_url" accept="image/*" placeholder="点击上传图片" />
-        </div>
-      </template>
-
-      <!-- 延长视频 -->
-      <div v-if="store.activeMode === 'extend_video'" class="form-item">
-        <span class="form-label">参考视频</span>
-        <FileUpload v-model="store.extendVideoParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="点击上传视频" />
-      </div>
-
-      <!-- 多模态 -->
-      <template v-if="store.activeMode === 'multimodal_ref'">
-        <div class="form-item"><span class="form-label">参考图片</span><FileUpload v-model="store.multimodalRefParams.image_urls" accept="image/*" multiple :maxCount="9" placeholder="点击上传图片" /></div>
-        <div class="form-item"><span class="form-label">参考视频</span><FileUpload v-model="store.multimodalRefParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="点击上传视频" /></div>
-        <div class="form-item"><span class="form-label">参考音频</span><FileUpload v-model="store.multimodalRefParams.audio_urls" accept="audio/*" multiple :maxCount="9" placeholder="点击上传音频" /></div>
-      </template>
-
-      <!-- 虚拟人像 -->
-      <div v-if="store.activeMode === 'virtual_avatar'" class="form-item">
-        <span class="form-label">Asset ID</span>
-        <van-field v-model="store.virtualAvatarParams.asset_id" placeholder="asset-xxxxxxxxx-xxxxx" />
+      <div class="form-item">
+        <span class="form-label">参考素材</span>
+        <FileUpload
+          v-model="store.multimodalRefParams.reference_urls"
+          accept="image/*,video/*,audio/*"
+          multiple
+          :maxCount="9"
+          placeholder="点击上传图片、视频或音频"
+        />
       </div>
 
       <!-- 通用参数 -->
@@ -121,7 +71,6 @@
           </div>
           <div class="work-info">
             <div class="work-tags">
-              <van-tag type="primary" size="medium">{{ store.getModeName(item.type) }}</van-tag>
               <van-tag :type="item.status === 'succeeded' ? 'success' : item.status === 'failed' ? 'danger' : 'warning'" size="medium">
                 {{ store.getStatusText(item.status) }}
               </van-tag>
@@ -161,7 +110,7 @@ function getParams() {
     case 'edit_video': return store.editVideoParams
     case 'extend_video': return store.extendVideoParams
     case 'virtual_avatar': return store.virtualAvatarParams
-    default: return store.textToVideoParams
+    default: return store.multimodalRefParams
   }
 }
 

@@ -2,21 +2,6 @@
   <div class="page-seedance">
     <!-- 左侧参数面板 -->
     <div class="params-panel">
-      <!-- 模式选择 -->
-      <div class="mode-buttons">
-        <div class="mode-grid">
-          <div
-            v-for="mode in store.modes"
-            :key="mode.key"
-            :class="['mode-btn', { active: store.activeMode === mode.key }]"
-            @click="store.switchMode(mode.key)"
-          >
-            <i :class="'iconfont icon-' + mode.icon"></i>
-            <span>{{ mode.name }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- 参数区域 -->
       <div class="params-container">
         <!-- 模型选择 -->
@@ -26,7 +11,7 @@
         <div class="param-line">
           <el-radio-group v-model="currentModel" size="small">
             <el-radio-button value="fast">Seedance 2.0 Fast</el-radio-button>
-            <el-radio-button value="standard">Seedance 2.0 VIP</el-radio-button>
+            <el-radio-button value="standard">Seedance 2.0</el-radio-button>
           </el-radio-group>
         </div>
 
@@ -45,69 +30,18 @@
           />
         </div>
 
-        <!-- 图生视频-首帧 -->
-        <template v-if="store.activeMode === 'image_to_video_first'">
-          <div class="param-line pt"><span class="label">首帧图片：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.imageToVideoFirstParams.first_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
-          </div>
-        </template>
-
-        <!-- 首尾帧模式 -->
-        <template v-if="store.activeMode === 'image_to_video_dual'">
-          <div class="param-line pt"><span class="label">首帧图片：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.imageToVideoDualParams.first_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
-          </div>
-          <div class="param-line pt"><span class="label">尾帧图片：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.imageToVideoDualParams.last_frame_url" accept="image/*" placeholder="拖拽图片或点击上传" />
-          </div>
-        </template>
-
-        <!-- 多模态参考 -->
-        <template v-if="store.activeMode === 'multimodal_ref'">
-          <div class="param-line pt"><span class="label">参考图片：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.multimodalRefParams.image_urls" accept="image/*" multiple :maxCount="9" placeholder="拖拽图片或点击上传" tip="支持 JPG/PNG，可粘贴截图" />
-          </div>
-          <div class="param-line pt"><span class="label">参考视频：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.multimodalRefParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="拖拽视频或点击上传" />
-          </div>
-          <div class="param-line pt"><span class="label">参考音频：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.multimodalRefParams.audio_urls" accept="audio/*" multiple :maxCount="9" placeholder="拖拽音频或点击上传" />
-          </div>
-        </template>
-
-        <!-- 编辑视频 -->
-        <template v-if="store.activeMode === 'edit_video'">
-          <div class="param-line pt"><span class="label">参考视频：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.editVideoParams.ref_video_url" accept="video/*" placeholder="拖拽视频或点击上传" />
-          </div>
-          <div class="param-line pt"><span class="label">参考图片：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.editVideoParams.ref_image_url" accept="image/*" placeholder="拖拽图片或点击上传" />
-          </div>
-        </template>
-
-        <!-- 延长视频 -->
-        <template v-if="store.activeMode === 'extend_video'">
-          <div class="param-line pt"><span class="label">参考视频：</span></div>
-          <div class="param-line">
-            <FileUpload v-model="store.extendVideoParams.video_urls" accept="video/*" multiple :maxCount="9" placeholder="拖拽视频或点击上传" />
-          </div>
-        </template>
-
-        <!-- 虚拟人像 -->
-        <template v-if="store.activeMode === 'virtual_avatar'">
-          <div class="param-line pt"><span class="label">虚拟人像 Asset ID：</span></div>
-          <div class="param-line">
-            <el-input v-model="store.virtualAvatarParams.asset_id" placeholder="asset-xxxxxxxxx-xxxxx" />
-          </div>
-        </template>
+        <!-- 参考素材 -->
+        <div class="param-line pt"><span class="label">参考素材：</span></div>
+        <div class="param-line">
+          <FileUpload
+            v-model="store.multimodalRefParams.reference_urls"
+            accept="image/*,video/*,audio/*"
+            multiple
+            :maxCount="9"
+            placeholder="拖拽图片、视频或音频，或点击上传"
+            tip="支持图片、视频、音频素材"
+          />
+        </div>
 
         <!-- 通用参数 -->
         <div class="param-line pt"><span class="label">分辨率：</span></div>
@@ -202,7 +136,6 @@
           </div>
           <div class="task-info">
             <div class="task-meta">
-              <el-tag size="small" type="primary">{{ store.getModeName(item.type) }}</el-tag>
               <el-tag
                 size="small"
                 :type="item.status === 'succeeded' ? 'success' : item.status === 'failed' ? 'danger' : 'warning'"
@@ -294,7 +227,7 @@ function getParams() {
     case 'edit_video': return store.editVideoParams
     case 'extend_video': return store.extendVideoParams
     case 'virtual_avatar': return store.virtualAvatarParams
-    default: return store.textToVideoParams
+    default: return store.multimodalRefParams
   }
 }
 
