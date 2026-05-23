@@ -88,7 +88,13 @@ func (h *PromptHandler) Image(c *gin.Context) {
 		return
 	}
 
-	resp.SUCCESS(c, strings.Trim(content, `"`))
+	content, err = normalizeGeneratedPrompt(content)
+	if err != nil {
+		resp.ERROR(c, err.Error())
+		return
+	}
+
+	resp.SUCCESS(c, content)
 }
 
 // Video 生成视频提示词
@@ -134,6 +140,14 @@ func (h *PromptHandler) MetaPrompt(c *gin.Context) {
 	}
 
 	resp.SUCCESS(c, strings.Trim(content, `"`))
+}
+
+func normalizeGeneratedPrompt(content string) (string, error) {
+	prompt := strings.TrimSpace(strings.Trim(content, `"`))
+	if prompt == "" {
+		return "", fmt.Errorf("生成提示词为空，请稍后重试")
+	}
+	return prompt, nil
 }
 
 func (h *PromptHandler) getPromptModel() string {
