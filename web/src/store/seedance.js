@@ -255,9 +255,9 @@ export const useSeedanceStore = defineStore('seedance', () => {
     }
   }
 
-  const fetchVeoData = async (pageNum = 1, mergeExisting = false) => {
+  const fetchVeoData = async (pageNum = 1, mergeExisting = false, silent = false) => {
     try {
-      loading.value = true
+      if (!silent) loading.value = true
       page.value = pageNum
       const response = await httpGet('/api/video/list', {
         type: 'veo',
@@ -288,7 +288,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     } catch (error) {
       showMessageError('获取任务列表失败:' + error.message)
     } finally {
-      loading.value = false
+      if (!silent) loading.value = false
     }
   }
 
@@ -303,7 +303,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     if (pollHandler) clearInterval(pollHandler)
     pollHandler = setInterval(async () => {
       if (isVeo.value) {
-        await fetchVeoData(1, true)
+        await fetchVeoData(1, true, true)
         const todoList = currentList.value.filter((i) => i.status === 'queued' || i.status === 'running')
         if (todoList.length === 0) stopPolling()
         return

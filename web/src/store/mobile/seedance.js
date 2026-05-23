@@ -89,6 +89,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
       isLogin.value = true
       userPower.value = user.power
       await fetchData(1)
+      startPolling()
     } catch (e) {
       console.error('init failed:', e)
     }
@@ -120,9 +121,9 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     }
   }
 
-  const fetchVeoData = async (pageNum = 1, mergeExisting = false) => {
+  const fetchVeoData = async (pageNum = 1, mergeExisting = false, silent = false) => {
     try {
-      listLoading.value = true
+      if (!silent) listLoading.value = true
       page.value = pageNum
       const res = await httpGet('/api/video/list', { type: 'veo', page: pageNum, page_size: pageSize.value })
       const items = (res.data?.items || []).map((item) => ({
@@ -146,7 +147,25 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     } catch (e) {
       showMessageError('获取列表失败')
     } finally {
-      listLoading.value = false
+      if (!silent) listLoading.value = false
+    }
+  }
+
+  let pollHandler = null
+  const startPolling = () => {
+    if (pollHandler) clearInterval(pollHandler)
+    pollHandler = setInterval(async () => {
+      if (!isVeo.value) return
+      await fetchVeoData(1, true, true)
+      const todoList = currentList.value.filter((item) => item.status === 'queued' || item.status === 'running')
+      if (todoList.length === 0) stopPolling()
+    }, 5000)
+  }
+
+  const stopPolling = () => {
+    if (pollHandler) {
+      clearInterval(pollHandler)
+      pollHandler = null
     }
   }
 
@@ -169,6 +188,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
           showMessageOK('任务提交成功')
           listFinished.value = false
           await fetchData(1)
+          startPolling()
         }
         return
       }
@@ -256,6 +276,10 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     showVideoDialog.value = true
   }
 
+  const cleanup = () => {
+    stopPolling()
+  }
+
   return {
     activeMode, loading, submitting, currentList, listLoading, listFinished,
     isLogin, userPower, currentPrompt, selectedModel, powerConfig, showVideoDialog, currentVideoUrl,
@@ -264,6 +288,6 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
     init, switchMode: (m) => { activeMode.value = m }, getModeName, getStatusText,
-    fetchData, submitTask, removeJob, retryTask, playVideo,
+    fetchData, submitTask, removeJob, retryTask, playVideo, cleanup,
   }
 })

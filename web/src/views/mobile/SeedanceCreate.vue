@@ -124,7 +124,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
 
@@ -181,6 +181,7 @@ function getParams() {
 }
 
 onMounted(() => store.init())
+onUnmounted(() => store.cleanup())
 </script>
 
 <style scoped>
