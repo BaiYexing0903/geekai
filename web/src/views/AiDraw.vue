@@ -102,21 +102,9 @@
                   ref="promptRef"
                   maxlength="4096"
                   show-word-limit
-                  placeholder="请在此输入绘画提示词，您也可以点击下面的提示词助手生成绘画提示词"
-                  v-loading="promptGenerating"
+                  placeholder="请在此输入绘画提示词"
                 />
               </div>
-
-              <div class="flex justify-end pt-2 pr-2">
-                <el-button @click="generatePrompt" type="primary" :loading="promptGenerating">
-                  <span v-if="!promptGenerating">
-                    <i class="iconfont icon-chuangzuo"></i>
-                    生成专业绘画指令
-                  </span>
-                  <span v-else>生成中...</span>
-                </el-button>
-              </div>
-
               <div class="mt-2 mb-2" v-if="params.mode === 'image_to_image'">
                 <label class="text-gray-700 font-semibold">参考图</label>
                 <div class="py-2">
@@ -365,7 +353,6 @@ const userId = ref(0)
 const page = ref(1)
 const pageSize = ref(15)
 const isGenerating = ref(false)
-const promptGenerating = ref(false)
 const promptRef = ref(null)
 
 // Aidraw 模型过滤关键字
@@ -546,21 +533,6 @@ const publishImage = (item, action) => {
       isOver.value = false
     })
     .catch((e) => ElMessage.error(text + '失败：' + e.message))
-}
-
-const generatePrompt = () => {
-  if (params.value.prompt === '') {
-    return showMessageError('请输入原始提示词')
-  }
-  promptGenerating.value = true
-  httpPost('/api/prompt/image', { prompt: params.value.prompt })
-    .then((res) => {
-      params.value.prompt = res.data
-    })
-    .catch((e) => showMessageError('生成提示词失败：' + e.message))
-    .finally(() => {
-      promptGenerating.value = false
-    })
 }
 
 const changeModel = (model) => {

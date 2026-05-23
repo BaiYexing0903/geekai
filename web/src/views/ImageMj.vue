@@ -223,21 +223,9 @@
                         show-word-limit
                         type="textarea"
                         ref="promptRef"
-                        v-loading="promptGenerating"
-                        placeholder="请在此输入绘画提示词，您也可以点击下面的提示词助手生成绘画提示词"
+                        placeholder="请在此输入绘画提示词"
                       />
                     </div>
-
-                    <div class="flex justify-end pt-2">
-                      <el-button @click="generatePrompt" type="primary" :loading="promptGenerating">
-                        <span v-if="!promptGenerating">
-                          <i class="iconfont icon-chuangzuo"></i>
-                          生成专业绘画指令
-                        </span>
-                        <span v-else>生成中...</span>
-                      </el-button>
-                    </div>
-
                     <div class="param-line pt">
                       <div class="flex-row justify-between items-center">
                         <div class="flex-row justify-start items-center">
@@ -347,24 +335,9 @@
                         :autosize="{ minRows: 4, maxRows: 6 }"
                         type="textarea"
                         ref="promptRef"
-                        v-loading="promptGenerating"
                         placeholder="请在此输入绘画提示词，系统会自动翻译中文提示词，高手请直接输入英文提示词"
                       />
                     </div>
-
-                    <el-row class="text-info">
-                      <el-button
-                        class="generate-btn"
-                        size="small"
-                        @click="generatePrompt"
-                        color="#5865f2"
-                        :disabled="promptGenerating"
-                      >
-                        <i class="iconfont icon-chuangzuo"></i>
-                        <span>生成专业绘画指令</span>
-                      </el-button>
-                    </el-row>
-
                     <div class="param-line pt">
                       <div class="flex-row justify-between items-center">
                         <div class="flex-row justify-start items-center">
@@ -1308,23 +1281,6 @@ const tabChange = (tab) => {
 // 删除已上传图片
 const removeUploadImage = (url) => {
   imgList.value = removeArrayItem(imgList.value, url)
-}
-
-const promptGenerating = ref(false)
-const generatePrompt = () => {
-  if (params.value.prompt === '') {
-    return showMessageError('请输入原始提示词')
-  }
-  promptGenerating.value = true
-  httpPost('/api/prompt/image', { prompt: params.value.prompt })
-    .then((res) => {
-      params.value.prompt = res.data
-      promptGenerating.value = false
-    })
-    .catch((e) => {
-      showMessageError('生成提示词失败：' + e.message)
-      promptGenerating.value = false
-    })
 }
 </script>
 
