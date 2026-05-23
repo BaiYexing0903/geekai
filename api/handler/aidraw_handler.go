@@ -214,7 +214,37 @@ func (h *AiDrawHandler) getData(finish bool, userId uint, page int, pageSize int
 		jobs = append(jobs, job)
 	}
 
+	modelIds := make([]uint, 0)
+	for _, item := range items {
+		var task types.AiDrawTask
+		if err := utils.JsonDecode(item.TaskInfo, &task); err == nil && task.ModelId > 0 {
+			modelIds = append(modelIds, task.ModelId)
+		}
+	}
+	if len(modelIds) > 0 {
+		var models []model.ChatModel
+		if err := h.DB.Where("id IN ?", modelIds).Find(&models).Error; err != nil {
+			return err, vo.Page{}
+		}
+		fillAiDrawJobModelNames(jobs, items, models)
+	}
+
 	return nil, vo.NewPage(total, page, pageSize, jobs)
+}
+
+func fillAiDrawJobModelNames(jobs []vo.AiDrawJob, items []model.AiDrawJob, models []model.ChatModel) {
+	modelNames := make(map[uint]string)
+	for _, item := range models {
+		modelNames[item.Id] = item.Name
+	}
+
+	for i := range jobs {
+		var task types.AiDrawTask
+		if err := utils.JsonDecode(items[i].TaskInfo, &task); err != nil {
+			continue
+		}
+		jobs[i].ModelName = modelNames[task.ModelId]
+	}
 }
 
 func (h *AiDrawHandler) Remove(c *gin.Context) {

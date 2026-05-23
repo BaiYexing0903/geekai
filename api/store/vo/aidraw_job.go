@@ -12,4 +12,5 @@ type AiDrawJob struct {
 	Progress  int    `json:"progress"`
 	ErrMsg    string `json:"err_msg"`
 	CreatedAt int64  `json:"created_at"`
+	ModelName string `json:"model_name"`
 }

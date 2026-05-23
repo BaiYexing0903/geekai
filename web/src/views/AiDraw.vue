@@ -207,6 +207,9 @@
                             class="px-4 pt-2 pb-4 border-t border-t-gray-800"
                             v-if="item.progress === 100"
                           >
+                            <div v-if="item.model_name" class="text-xs text-gray-400 pb-3 truncate">
+                              模型：{{ item.model_name }}
+                            </div>
                             <div
                               class="pt-3 flex justify-center items-center border-t border-t-gray-600 border-opacity-50"
                             >
