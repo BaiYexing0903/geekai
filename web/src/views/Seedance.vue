@@ -19,38 +19,28 @@
           <span class="label">提示词：</span>
         </div>
         <div v-if="store.activeMode !== 'image_to_video_first'" class="param-line">
-          <el-popover
-            v-model:visible="showMentionPicker"
-            placement="bottom-start"
-            trigger="manual"
-            width="260"
-            popper-class="seedance-mention-popper"
-          >
-            <template #reference>
-              <div class="prompt-box">
-                <el-input
-                  ref="promptInputRef"
-                  v-model="store.currentPrompt"
-                  type="textarea"
-                  :autosize="{ minRows: 3, maxRows: 6 }"
-                  placeholder="描述你想生成的视频画面..."
-                  maxlength="1000"
-                  show-word-limit
-                  @input="onPromptInput"
-                  @click="rememberPromptCursor"
-                  @keyup="rememberPromptCursor"
-                  @select="rememberPromptCursor"
-                  @blur="onPromptBlur"
-                />
-                <el-button
-                  class="mention-btn"
-                  text
-                  @mousedown.prevent.stop="toggleMentionPicker"
-                  @click.prevent.stop
-                >@</el-button>
-              </div>
-            </template>
-            <div class="mention-menu" @mousedown.prevent.stop @click.stop>
+          <div class="prompt-box">
+            <el-input
+              ref="promptInputRef"
+              v-model="store.currentPrompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 6 }"
+              placeholder="描述你想生成的视频画面..."
+              maxlength="1000"
+              show-word-limit
+              @input="onPromptInput"
+              @click="rememberPromptCursor"
+              @keyup="rememberPromptCursor"
+              @select="rememberPromptCursor"
+              @blur="onPromptBlur"
+            />
+            <el-button
+              class="mention-btn"
+              text
+              @mousedown.prevent.stop="toggleMentionPicker"
+              @click.prevent.stop
+            >@</el-button>
+            <div v-if="showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
               <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
               <button
                 v-for="option in mentionOptions"
@@ -70,7 +60,7 @@
                 </span>
               </button>
             </div>
-          </el-popover>
+          </div>
         </div>
 
         <!-- 参考素材 -->
@@ -582,13 +572,22 @@ onUnmounted(() => store.cleanup())
   max-height: 70vh;
 }
 
-:global(.seedance-mention-popper) {
-  padding: 6px;
-}
 .mention-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
 }
 .mention-empty {
   padding: 14px 8px;
