@@ -1,7 +1,19 @@
 <template>
   <el-container class="chat-file-list">
-    <div v-for="file in fileList" :key="file.url">
-      <div class="image" v-if="isImage(file.ext)">
+    <div v-for="file in fileList" :key="file.url || file.uid">
+      <div class="item uploading" v-if="file.uploading">
+        <div class="icon">
+          <el-icon><Loading /></el-icon>
+        </div>
+        <div class="body">
+          <div class="title">{{ substr(file.name, 30) }}</div>
+          <div class="info">
+            <span>上传中</span>
+            <span>{{ FormatFileSize(file.size || 0) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="image" v-else-if="isImage(file.ext)">
         <el-image :src="file.url" fit="cover" />
         <div class="action">
           <el-icon @click="removeFile(file)"><CircleCloseFilled /></el-icon>
@@ -33,7 +45,7 @@
 <script setup>
 import { FormatFileSize, GetFileIcon, GetFileType } from '@/store/system'
 import { isImage, removeArrayItem, substr } from '@/utils/libs'
-import { CircleCloseFilled } from '@element-plus/icons-vue'
+import { CircleCloseFilled, Loading } from '@element-plus/icons-vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -106,6 +118,20 @@ const removeFile = (file) => {
           margin-right: 10px;
         }
       }
+    }
+  }
+
+  .uploading {
+    opacity: 0.8;
+
+    .icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #754ff6;
+      font-size: 22px;
     }
   }
 
