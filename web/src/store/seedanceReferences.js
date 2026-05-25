@@ -16,12 +16,21 @@ function getUrlExt(url) {
   return getResourceFileName(url).split('.').pop().toLowerCase()
 }
 
+function isSeedanceAssetUrl(url) {
+  return /^asset:\/\/asset-/.test(url)
+}
+
+function getReferenceType(url) {
+  if (isSeedanceAssetUrl(url)) return 'image'
+  return getMediaType(getUrlExt(url))
+}
+
 export function splitSeedanceReferenceUrls(urls) {
   return urls.reduce((result, url) => {
-    const ext = getUrlExt(url)
-    if (imageExts.includes(ext)) result.image_urls.push(url)
-    if (videoExts.includes(ext)) result.video_urls.push(url)
-    if (audioExts.includes(ext)) result.audio_urls.push(url)
+    const type = getReferenceType(url)
+    if (type === 'image') result.image_urls.push(url)
+    if (type === 'video') result.video_urls.push(url)
+    if (type === 'audio') result.audio_urls.push(url)
     return result
   }, { image_urls: [], video_urls: [], audio_urls: [] })
 }
@@ -33,24 +42,26 @@ function getMediaType(ext) {
   return ''
 }
 
-export function buildSeedanceMentionOptions(urls) {
+export function buildSeedanceMentionOptions(urls, previewMap = {}) {
   const counters = { image: 0, video: 0, audio: 0 }
 
   return urls.reduce((options, url) => {
-    const type = getMediaType(getUrlExt(url))
+    const type = getReferenceType(url)
     if (!type) return options
 
     counters[type] += 1
     const index = counters[type]
     const config = mentionConfig[type]
+    const preview = previewMap[url]
 
     options.push({
       label: `@${config.label}${index}`,
       replacement: `第${index}${config.replacementUnit}`,
-      description: `${config.label}${index} · ${getResourceFileName(url)}`,
+      description: `${config.label}${index} · ${preview?.title || getResourceFileName(url)}`,
       type,
       index,
       url,
+      previewUrl: preview?.preview_url,
     })
 
     return options

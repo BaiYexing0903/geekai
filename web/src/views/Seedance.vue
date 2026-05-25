@@ -117,7 +117,16 @@
             :maxCount="9"
             placeholder="拖拽图片、视频或音频，或点击上传"
             tip="支持图片、视频、音频素材"
+            :previewMap="store.referenceAssetPreviews"
           />
+          <el-button
+            v-if="store.activeMode === 'multimodal_ref'"
+            class="portrait-picker-btn"
+            :loading="store.portraitLoading"
+            @click="store.openPortraitDialog"
+          >
+            选择虚拟人像
+          </el-button>
         </div>
 
         <!-- 通用参数 -->
@@ -256,6 +265,34 @@
       </div>
     </div>
 
+    <el-dialog v-model="store.portraitDialogVisible" title="选择虚拟人像" width="860px" destroy-on-close>
+      <div class="portrait-filters">
+        <el-select v-model="store.portraitFilters.gender" clearable placeholder="性别" @change="store.fetchPortraits(1)">
+          <el-option label="女性" value="女性" />
+          <el-option label="男性" value="男性" />
+        </el-select>
+        <el-input v-model="store.portraitFilters.country" clearable placeholder="国家，如：中国" @change="store.fetchPortraits(1)" />
+        <el-input v-model="store.portraitFilters.occupation" clearable placeholder="职业，如：演员" @change="store.fetchPortraits(1)" />
+      </div>
+      <div v-loading="store.portraitLoading" class="portrait-grid">
+        <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
+          <img :src="portrait.preview_url" alt="" />
+          <strong>{{ portrait.title }}</strong>
+          <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
+        </button>
+        <el-empty v-if="!store.portraitLoading && store.portraitList.length === 0" description="没有找到虚拟人像" />
+      </div>
+      <template #footer>
+        <el-pagination
+          layout="prev, pager, next"
+          :current-page="store.portraitFilters.page"
+          :page-size="store.portraitFilters.page_size"
+          :total="store.portraitTotal"
+          @current-change="store.fetchPortraits"
+        />
+      </template>
+    </el-dialog>
+
     <!-- 视频预览 -->
     <el-dialog v-model="store.showDialog" title="视频预览" width="800px" destroy-on-close>
       <video
@@ -285,7 +322,7 @@ const filterLabels = { all: '全部', processing: '进行中', succeeded: '已�
 
 const currentResolutionOptions = computed(() => store.isVeo ? store.veoResolutionOptions : store.resolutionOptions)
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
-const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || []))
+const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || [], store.referenceAssetPreviews))
 
 const currentResolution = computed({
   get: () => store.isVeo ? store.veoParams.resolution : getParams()?.resolution || '720p',
@@ -497,6 +534,55 @@ onUnmounted(() => store.cleanup())
   font-size: 12px;
   margin-left: 4px;
   opacity: 0.8;
+}
+
+.portrait-picker-btn {
+  margin-top: 8px;
+}
+
+.portrait-filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.portrait-grid {
+  min-height: 260px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.portrait-card {
+  border: 1px solid var(--el-border-color);
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+
+  strong,
+  span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  span {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    margin-top: 3px;
+  }
 }
 
 .main-content {

@@ -92,7 +92,19 @@
           multiple
           :maxCount="9"
           placeholder="点击上传图片、视频或音频"
+          :previewMap="store.referenceAssetPreviews"
         />
+        <van-button
+          v-if="store.activeMode === 'multimodal_ref'"
+          block
+          plain
+          type="primary"
+          class="portrait-picker-btn"
+          :loading="store.portraitLoading"
+          @click="store.openPortraitDialog"
+        >
+          选择虚拟人像
+        </van-button>
       </div>
 
       <!-- 通用参数 -->
@@ -164,6 +176,26 @@
       <video v-if="store.currentVideoUrl" :src="store.currentVideoUrl" controls autoplay style="width: 100%" />
     </van-dialog>
 
+    <van-popup v-model:show="store.portraitDialogVisible" round position="bottom" :style="{ height: '82%' }">
+      <div class="portrait-sheet">
+        <div class="portrait-title">选择虚拟人像</div>
+        <div class="portrait-filters">
+          <van-field v-model="store.portraitFilters.gender" placeholder="性别：女性/男性" @blur="store.fetchPortraits(1)" />
+          <van-field v-model="store.portraitFilters.country" placeholder="国家，如：中国" @blur="store.fetchPortraits(1)" />
+          <van-field v-model="store.portraitFilters.occupation" placeholder="职业，如：演员" @blur="store.fetchPortraits(1)" />
+        </div>
+        <van-loading v-if="store.portraitLoading" />
+        <div v-else class="portrait-grid">
+          <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
+            <img :src="portrait.preview_url" alt="" />
+            <strong>{{ portrait.title }}</strong>
+            <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
+          </button>
+          <van-empty v-if="store.portraitList.length === 0" description="没有找到虚拟人像" />
+        </div>
+      </div>
+    </van-popup>
+
     <van-popup v-if="store.activeMode === 'multimodal_ref'" v-model:show="showMentionPicker" round position="bottom">
       <div class="mention-sheet">
         <div class="mention-title">选择参考素材</div>
@@ -206,7 +238,7 @@ const modelColumns = computed(() => store.videoModels.map((model) => ({ text: mo
 const selectedModelLabel = computed(() => store.currentModelConfig.label)
 
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
-const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || []))
+const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || [], store.referenceAssetPreviews))
 const currentRatio = computed({
   get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,
   set: (value) => {
@@ -414,6 +446,53 @@ onUnmounted(() => store.cleanup())
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+.portrait-picker-btn {
+  margin-top: 8px;
+}
+.portrait-sheet {
+  padding: 14px;
+  height: 100%;
+  overflow-y: auto;
+}
+.portrait-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.portrait-filters {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.portrait-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.portrait-card {
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  text-align: left;
+}
+.portrait-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.portrait-card strong,
+.portrait-card span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.portrait-card span {
+  color: #888;
+  font-size: 12px;
+  margin-top: 3px;
 }
 .mention-text {
   display: flex;

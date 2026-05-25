@@ -81,6 +81,26 @@ func (c *Client) QueryTask(taskId string) (*QueryTaskResp, error) {
 	return &result, nil
 }
 
+func (c *Client) ListMediaAssetGroup(req *ListMediaAssetGroupReq) (*ListMediaAssetGroupResp, error) {
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request failed: %w", err)
+	}
+	url := c.config.ApiURL + "/open/ListMediaAssetGroup"
+	respBody, err := c.doPost(url, body)
+	if err != nil {
+		return nil, err
+	}
+	var result ListMediaAssetGroupResp
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response failed: %w, body: %s", err, string(respBody))
+	}
+	if result.Code != "" && result.Code != "200" {
+		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
+	}
+	return &result, nil
+}
+
 func (c *Client) doPost(url string, body []byte) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {

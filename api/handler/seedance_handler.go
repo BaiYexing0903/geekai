@@ -38,6 +38,7 @@ func (h *SeedanceHandler) RegisterRoutes() {
 	group.Use(middleware.UserAuthMiddleware(h.App.Config.Session.SecretKey, h.App.Redis))
 	{
 		group.POST("task", h.CreateTask)
+		group.POST("portraits", h.Portraits)
 		group.GET("power-config", h.GetPowerConfig)
 		group.POST("jobs", h.Jobs)
 		group.GET("remove", h.Remove)
@@ -64,6 +65,75 @@ type SeedanceTaskRequest struct {
 	AssetId       string   `json:"asset_id"`
 }
 
+type SeedancePortraitListRequest struct {
+	Page       int      `json:"page"`
+	PageSize   int      `json:"page_size"`
+	Gender     string   `json:"gender"`
+	Country    string   `json:"country"`
+	Ages       []string `json:"ages"`
+	Occupation string   `json:"occupation"`
+}
+
+type SeedancePortraitListResponse struct {
+	Items    []SeedancePortraitItem `json:"items"`
+	Total    int                    `json:"total"`
+	Page     int                    `json:"page"`
+	PageSize int                    `json:"page_size"`
+}
+
+type SeedancePortraitItem struct {
+	AssetID     string                      `json:"asset_id"`
+	AssetURL    string                      `json:"asset_url"`
+	PreviewURL  string                      `json:"preview_url"`
+	Title       string                      `json:"title"`
+	Description string                      `json:"description"`
+	Metadata    seedance.MediaAssetMetadata `json:"metadata"`
+}
+
+func normalizeSeedancePortraits(apiResp *seedance.ListMediaAssetGroupResp) SeedancePortraitListResponse {
+	result := SeedancePortraitListResponse{
+		Items:    []SeedancePortraitItem{},
+		Total:    apiResp.Result.TotalCount,
+		Page:     apiResp.Result.PageNum,
+		PageSize: apiResp.Result.PageSize,
+	}
+	for _, item := range apiResp.Result.Items {
+		group := item.AssetGroup
+		if len(group.Content.Image) == 0 || group.Content.Image[0].AssetID == "" {
+			continue
+		}
+		image := group.Content.Image[0]
+		result.Items = append(result.Items, SeedancePortraitItem{
+			AssetID:     image.AssetID,
+			AssetURL:    "asset://" + image.AssetID,
+			PreviewURL:  image.URL,
+			Title:       group.Title,
+			Description: group.Description,
+			Metadata:    group.Metadata,
+		})
+	}
+	return result
+}
+
+func buildSeedancePortraitFilters(req SeedancePortraitListRequest) []seedance.MediaAssetFilter {
+	filters := []seedance.MediaAssetFilter{
+		{Field: "metadata.type", Op: "must", Conds: seedance.MediaAssetConds{StrValues: []string{"portrait"}}},
+	}
+	if req.Gender != "" {
+		filters = append(filters, seedance.MediaAssetFilter{Field: "metadata.gender", Op: "must", Conds: seedance.MediaAssetConds{StrValues: []string{req.Gender}}})
+	}
+	if req.Country != "" {
+		filters = append(filters, seedance.MediaAssetFilter{Field: "metadata.country", Op: "must", Conds: seedance.MediaAssetConds{StrValues: []string{req.Country}}})
+	}
+	if len(req.Ages) > 0 {
+		filters = append(filters, seedance.MediaAssetFilter{Field: "metadata.age", Op: "must", Conds: seedance.MediaAssetConds{StrValues: req.Ages}})
+	}
+	if req.Occupation != "" {
+		filters = append(filters, seedance.MediaAssetFilter{Field: "metadata.occupation", Op: "must", Conds: seedance.MediaAssetConds{StrValues: []string{req.Occupation}}})
+	}
+	return filters
+}
+
 func isSeedanceTaskTypeAllowed(taskType string) bool {
 	switch taskType {
 	case string(model.SDModeMultimodalRef), string(model.SDModeImageToVideoDual):
@@ -84,6 +154,33 @@ func seedanceStatusFilter(filter string) []model.SDTaskStatus {
 	default:
 		return nil
 	}
+}
+
+func (h *SeedanceHandler) Portraits(c *gin.Context) {
+	var req SeedancePortraitListRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.ERROR(c, types.InvalidArgs)
+		return
+	}
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 || req.PageSize > 50 {
+		req.PageSize = 24
+	}
+	apiResp, err := h.seedanceService.ListMediaAssetGroup(&seedance.ListMediaAssetGroupReq{
+		PageNum:   req.Page,
+		PageSize:  req.PageSize,
+		SortBy:    "score",
+		SortOrder: "desc",
+		Filters:   buildSeedancePortraitFilters(req),
+	})
+	if err != nil {
+		logger.Errorf("list seedance portraits failed: %v", err)
+		resp.ERROR(c, "获取虚拟人像失败")
+		return
+	}
+	resp.SUCCESS(c, normalizeSeedancePortraits(apiResp))
 }
 
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {

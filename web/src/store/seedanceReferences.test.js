@@ -31,6 +31,18 @@ describe('splitSeedanceReferenceUrls', () => {
       ],
     })
   })
+  test('groups asset portrait urls as image references', () => {
+    const result = splitSeedanceReferenceUrls([
+      'asset://asset-20260224225721-prllw',
+      'https://cdn.example.com/music.mp3',
+    ])
+
+    expect(result).toEqual({
+      image_urls: ['asset://asset-20260224225721-prllw'],
+      video_urls: [],
+      audio_urls: ['https://cdn.example.com/music.mp3'],
+    })
+  })
 })
 
 describe('buildSeedanceMentionOptions', () => {
@@ -75,6 +87,26 @@ describe('buildSeedanceMentionOptions', () => {
         type: 'image',
         index: 2,
         url: 'https://cdn.example.com/image-b.WEBP',
+      },
+    ])
+  })
+  test('uses asset preview metadata in mention options', () => {
+    const previews = {
+      'asset://asset-abc': {
+        preview_url: 'https://example.com/avatar.jpg',
+        title: '中国 22岁 女性 演员',
+      },
+    }
+
+    expect(buildSeedanceMentionOptions(['asset://asset-abc'], previews)).toEqual([
+      {
+        label: '@图片1',
+        replacement: '第1张图片',
+        description: '图片1 · 中国 22岁 女性 演员',
+        type: 'image',
+        index: 1,
+        url: 'asset://asset-abc',
+        previewUrl: 'https://example.com/avatar.jpg',
       },
     ])
   })

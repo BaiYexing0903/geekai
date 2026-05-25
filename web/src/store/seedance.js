@@ -26,6 +26,12 @@ export const useSeedanceStore = defineStore('seedance', () => {
   const powerConfig = reactive({})
   const showDialog = ref(false)
   const currentVideoUrl = ref('')
+  const portraitDialogVisible = ref(false)
+  const portraitLoading = ref(false)
+  const portraitList = ref([])
+  const portraitTotal = ref(0)
+  const portraitFilters = reactive({ page: 1, page_size: 24, gender: '', country: '', ages: [], occupation: '' })
+  const referenceAssetPreviews = reactive({})
 
   const shareStore = useSharedStore()
 
@@ -328,6 +334,44 @@ export const useSeedanceStore = defineStore('seedance', () => {
     }
   }
 
+  const fetchPortraits = async (pageNum = 1) => {
+    try {
+      portraitLoading.value = true
+      portraitFilters.page = pageNum
+      const response = await httpPost('/api/seedance/portraits', portraitFilters)
+      portraitList.value = response.data?.items || []
+      portraitTotal.value = response.data?.total || 0
+    } catch (error) {
+      showMessageError(error.message || '获取虚拟人像失败')
+    } finally {
+      portraitLoading.value = false
+    }
+  }
+
+  const openPortraitDialog = async () => {
+    portraitDialogVisible.value = true
+    if (portraitList.value.length === 0) await fetchPortraits(1)
+  }
+
+  const selectPortrait = (portrait) => {
+    const assetUrl = portrait.asset_url
+    if (!assetUrl) return
+    if ((multimodalRefParams.reference_urls || []).includes(assetUrl)) {
+      showMessageError('已选择该虚拟人像')
+      return
+    }
+    if (multimodalRefParams.reference_urls.length >= 9) {
+      showMessageError('最多支持9个参考素材')
+      return
+    }
+    multimodalRefParams.reference_urls.push(assetUrl)
+    referenceAssetPreviews[assetUrl] = {
+      preview_url: portrait.preview_url,
+      title: portrait.title,
+    }
+    portraitDialogVisible.value = false
+  }
+
   const submitTask = async () => {
     if (!isLogin.value) {
       shareStore.setShowLoginDialog(true)
@@ -478,12 +522,13 @@ export const useSeedanceStore = defineStore('seedance', () => {
   return {
     activeMode, loading, submitting, page, pageSize, total, currentList, isOver,
     isLogin, userPower, currentPrompt, selectedModel, powerConfig, showDialog, currentVideoUrl,
+    portraitDialogVisible, portraitLoading, portraitList, portraitTotal, portraitFilters, referenceAssetPreviews,
     modes, videoModels, currentModelConfig, isVeo, resolutionOptions, ratioOptions, durationOptions,
     veoResolutionOptions, veoRatioOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
     multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
-    init, switchMode, getModeName, getStatusText, fetchData, submitTask,
+    init, switchMode, getModeName, getStatusText, fetchData, fetchPortraits, openPortraitDialog, selectPortrait, submitTask,
     downloadFile, retryTask, removeJob, playVideo, cleanup,
     substr, replaceImg,
   }

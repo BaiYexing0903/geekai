@@ -81,3 +81,65 @@ type CreateJobReq struct {
 	Watermark     bool             `json:"watermark"`
 	Power         int              `json:"power"`
 }
+
+type MediaAssetFilter struct {
+	Field string          `json:"Field"`
+	Op    string          `json:"Op"`
+	Conds MediaAssetConds `json:"Conds"`
+}
+
+type MediaAssetConds struct {
+	StrValues []string `json:"StrValues"`
+}
+
+type ListMediaAssetGroupReq struct {
+	PageNum   int                `json:"PageNum"`
+	PageSize  int                `json:"PageSize"`
+	SortBy    string             `json:"SortBy"`
+	SortOrder string             `json:"SortOrder"`
+	Filters   []MediaAssetFilter `json:"Filters"`
+}
+
+type ListMediaAssetGroupResp struct {
+	Result  MediaAssetGroupResult `json:"Result"`
+	Code    string                `json:"code,omitempty"`
+	Message string                `json:"message,omitempty"`
+}
+
+type MediaAssetGroupResult struct {
+	Items      []MediaAssetGroupItem `json:"Items"`
+	TotalCount int                   `json:"TotalCount"`
+	PageNum    int                   `json:"PageNum"`
+	PageSize   int                   `json:"PageSize"`
+}
+
+type MediaAssetGroupItem struct {
+	AssetGroup MediaAssetGroup `json:"AssetGroup"`
+}
+
+type MediaAssetGroup struct {
+	SID            string                 `json:"SID"`
+	Title          string                 `json:"Title"`
+	Description    string                 `json:"Description"`
+	Metadata       MediaAssetMetadata     `json:"Metadata"`
+	Content        MediaAssetContent      `json:"Content"`
+	Score          float64                `json:"Score"`
+	AdditionalInfo map[string]interface{} `json:"AdditionalInfo"`
+}
+
+type MediaAssetMetadata struct {
+	Country    string `json:"Country"`
+	Age        int    `json:"Age"`
+	Gender     string `json:"Gender"`
+	Occupation string `json:"Occupation"`
+	Type       string `json:"Type"`
+}
+
+type MediaAssetContent struct {
+	Image []MediaAssetImage `json:"Image"`
+}
+
+type MediaAssetImage struct {
+	AssetID string `json:"AssetID"`
+	URL     string `json:"URL"`
+}
