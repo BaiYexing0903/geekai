@@ -427,8 +427,10 @@ onUnmounted(() => store.cleanup())
 }
 .mode-btn {
   display: flex;
+  min-height: 74px;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 8px 4px;
   border-radius: 8px;
   cursor: pointer;
