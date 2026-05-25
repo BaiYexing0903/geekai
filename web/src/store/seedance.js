@@ -355,17 +355,26 @@ export const useSeedanceStore = defineStore('seedance', () => {
         return
       }
       const referenceUrls = activeMode.value === 'multimodal_ref' ? multimodalRefParams.reference_urls || [] : []
+      const p = getStoreParams()
+      if (activeMode.value === 'image_to_video_dual' && (!imageToVideoDualParams.first_frame_url || !imageToVideoDualParams.last_frame_url)) {
+        showMessageError('请上传首帧和尾帧图片')
+        return
+      }
       const requestData = {
         task_type: activeMode.value,
         prompt: activeMode.value === 'multimodal_ref'
           ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls)
           : currentPrompt.value,
-        model: multimodalRefParams.model,
-        resolution: multimodalRefParams.resolution,
-        ratio: multimodalRefParams.ratio,
-        duration: multimodalRefParams.duration,
-        generate_audio: multimodalRefParams.generate_audio,
-        watermark: multimodalRefParams.watermark,
+        model: p.model,
+        resolution: p.resolution,
+        ratio: p.ratio,
+        duration: p.duration,
+        generate_audio: p.generate_audio,
+        watermark: p.watermark,
+      }
+      if (activeMode.value === 'image_to_video_dual') {
+        requestData.first_frame_url = imageToVideoDualParams.first_frame_url
+        requestData.last_frame_url = imageToVideoDualParams.last_frame_url
       }
       if (activeMode.value === 'multimodal_ref') {
         Object.assign(requestData, splitSeedanceReferenceUrls(referenceUrls))

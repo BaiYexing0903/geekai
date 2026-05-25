@@ -193,6 +193,10 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         return
       }
       const referenceUrls = activeMode.value === 'multimodal_ref' ? multimodalRefParams.reference_urls || [] : []
+      if (activeMode.value === 'image_to_video_dual' && (!imageToVideoDualParams.first_frame_url || !imageToVideoDualParams.last_frame_url)) {
+        showMessageError('请上传首帧和尾帧图片')
+        return
+      }
       const p = getParams()
       const req = {
         task_type: activeMode.value,

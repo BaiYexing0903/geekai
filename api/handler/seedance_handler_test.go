@@ -6,8 +6,8 @@ import (
 	"geekai/store/model"
 )
 
-func TestSeedanceTaskTypeAllowsOnlyMultimodalReference(t *testing.T) {
-	allowedTypes := []string{"multimodal_ref"}
+func TestSeedanceTaskTypeAllowsMultimodalReferenceAndDualFrameOnly(t *testing.T) {
+	allowedTypes := []string{"multimodal_ref", "image_to_video_dual"}
 	for _, taskType := range allowedTypes {
 		if !isSeedanceTaskTypeAllowed(taskType) {
 			t.Fatalf("expected %s to be allowed", taskType)
@@ -17,7 +17,6 @@ func TestSeedanceTaskTypeAllowsOnlyMultimodalReference(t *testing.T) {
 	blockedTypes := []string{
 		"text_to_video",
 		"image_to_video_first",
-		"image_to_video_dual",
 		"edit_video",
 		"extend_video",
 		"virtual_avatar",

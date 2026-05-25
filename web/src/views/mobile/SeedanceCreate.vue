@@ -26,6 +26,19 @@
           />
         </van-popup>
       </div>
+      <div v-if="!store.isVeo" class="form-item">
+        <span class="form-label">创作模式</span>
+        <div class="mode-tabs">
+          <div
+            v-for="mode in store.modes"
+            :key="mode.key"
+            :class="['mode-tab', { active: store.activeMode === mode.key }]"
+            @click="switchSeedanceMode(mode.key)"
+          >
+            {{ mode.name }}
+          </div>
+        </div>
+      </div>
 
       <!-- 提示词 -->
       <div class="form-item" v-if="store.activeMode !== 'image_to_video_first'">
@@ -44,7 +57,7 @@
             @select="rememberPromptCursor"
             @blur="onPromptBlur"
           />
-          <button type="button" class="mention-btn" @mousedown.prevent.stop="toggleMentionPicker" @click.prevent.stop>@</button>
+          <button v-if="store.activeMode === 'multimodal_ref'" type="button" class="mention-btn" @mousedown.prevent.stop="toggleMentionPicker" @click.prevent.stop>@</button>
         </div>
       </div>
 
@@ -58,6 +71,20 @@
           :maxCount="2"
           placeholder="上传首帧/尾帧图片，不上传则为文生视频"
         />
+        <template v-else-if="store.activeMode === 'image_to_video_dual'">
+          <FileUpload
+            v-model="store.imageToVideoDualParams.first_frame_url"
+            accept="image/*"
+            placeholder="上传首帧图片"
+            tip="首帧图片，必填"
+          />
+          <FileUpload
+            v-model="store.imageToVideoDualParams.last_frame_url"
+            accept="image/*"
+            placeholder="上传尾帧图片"
+            tip="尾帧图片，必填"
+          />
+        </template>
         <FileUpload
           v-else
           v-model="store.multimodalRefParams.reference_urls"
@@ -137,7 +164,7 @@
       <video v-if="store.currentVideoUrl" :src="store.currentVideoUrl" controls autoplay style="width: 100%" />
     </van-dialog>
 
-    <van-popup v-model:show="showMentionPicker" round position="bottom">
+    <van-popup v-if="store.activeMode === 'multimodal_ref'" v-model:show="showMentionPicker" round position="bottom">
       <div class="mention-sheet">
         <div class="mention-title">选择参考素材</div>
         <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
@@ -202,6 +229,7 @@ function rememberPromptCursor() {
 
 function onPromptInput() {
   rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
   const textarea = getPromptTextarea()
   const cursor = textarea?.selectionStart ?? store.currentPrompt.length
   if ((store.currentPrompt || '')[cursor - 1] === '@') showMentionPicker.value = true
@@ -213,7 +241,13 @@ function onPromptBlur() {
 
 function toggleMentionPicker() {
   rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
   showMentionPicker.value = true
+}
+
+function switchSeedanceMode(mode) {
+  store.switchMode(mode)
+  showMentionPicker.value = false
 }
 
 async function insertMention(label) {
@@ -245,6 +279,7 @@ function selectModel(model) {
     store.veoParams.model = model.model
   } else {
     store.multimodalRefParams.model = model.model
+    store.imageToVideoDualParams.model = model.model
   }
   store.fetchData(1)
 }

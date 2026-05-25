@@ -13,6 +13,25 @@
             <el-option v-for="model in store.videoModels" :key="model.value" :label="model.label" :value="model.value" />
           </el-select>
         </div>
+        <!-- 创作模式 -->
+        <template v-if="!store.isVeo">
+          <div class="param-line pt">
+            <span class="label">创作模式：</span>
+          </div>
+          <div class="mode-buttons">
+            <div class="mode-grid">
+              <div
+                v-for="mode in store.modes"
+                :key="mode.key"
+                :class="['mode-btn', { active: store.activeMode === mode.key }]"
+                @click="switchSeedanceMode(mode.key)"
+              >
+                <i v-if="mode.icon" :class="['iconfont', `icon-${mode.icon}`]"></i>
+                <span>{{ mode.name }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
 
         <!-- 提示词（非虚拟人像必须） -->
         <div v-if="store.activeMode !== 'image_to_video_first'" class="param-line pt">
@@ -35,12 +54,13 @@
               @blur="onPromptBlur"
             />
             <el-button
+              v-if="store.activeMode === 'multimodal_ref'"
               class="mention-btn"
               text
               @mousedown.prevent.stop="toggleMentionPicker"
               @click.prevent.stop
             >@</el-button>
-            <div v-if="showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
+            <div v-if="store.activeMode === 'multimodal_ref' && showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
               <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
               <button
                 v-for="option in mentionOptions"
@@ -75,6 +95,20 @@
             placeholder="上传首帧/尾帧图片，不上传则为文生视频"
             tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
           />
+          <template v-else-if="store.activeMode === 'image_to_video_dual'">
+            <FileUpload
+              v-model="store.imageToVideoDualParams.first_frame_url"
+              accept="image/*"
+              placeholder="上传首帧图片"
+              tip="首帧图片，必填"
+            />
+            <FileUpload
+              v-model="store.imageToVideoDualParams.last_frame_url"
+              accept="image/*"
+              placeholder="上传尾帧图片"
+              tip="尾帧图片，必填"
+            />
+          </template>
           <FileUpload
             v-else
             v-model="store.multimodalRefParams.reference_urls"
@@ -310,6 +344,7 @@ function rememberPromptCursor() {
 
 function onPromptInput() {
   rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
   const textarea = getPromptTextarea()
   const cursor = textarea?.selectionStart ?? store.currentPrompt.length
   if ((store.currentPrompt || '')[cursor - 1] === '@') showMentionPicker.value = true
@@ -321,7 +356,13 @@ function onPromptBlur() {
 
 function toggleMentionPicker() {
   rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
   showMentionPicker.value = true
+}
+
+function switchSeedanceMode(mode) {
+  store.switchMode(mode)
+  showMentionPicker.value = false
 }
 
 async function insertMention(label) {
@@ -349,6 +390,7 @@ function onModelChange(value) {
     return
   }
   store.multimodalRefParams.model = model.model
+  store.imageToVideoDualParams.model = model.model
   store.fetchData(1)
 }
 

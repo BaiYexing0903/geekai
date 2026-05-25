@@ -2,9 +2,10 @@ import { describe, expect, test } from 'vitest'
 import { seedanceModes } from './seedanceModes'
 
 describe('mobile seedanceModes', () => {
-  test('only exposes multimodal reference creation', () => {
+  test('exposes multimodal reference and dual-frame creation only', () => {
     expect(seedanceModes).toEqual([
       { key: 'multimodal_ref', name: '多模态' },
+      { key: 'image_to_video_dual', name: '首尾帧' },
     ])
   })
 })
