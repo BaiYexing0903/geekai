@@ -57,12 +57,10 @@ export const useSeedanceStore = defineStore('seedance', () => {
     { label: '21:9', value: '21:9' },
   ]
 
-  const durationOptions = [
-    { label: '5秒', value: 5 },
-    { label: '8秒', value: 8 },
-    { label: '10秒', value: 10 },
-    { label: '自动', value: -1 },
-  ]
+  const durationOptions = Array.from({ length: 12 }, (_, index) => {
+    const value = index + 4
+    return { label: `${value}秒`, value }
+  })
 
   const veoResolutionOptions = [
     { label: '720p', value: '720p' },
