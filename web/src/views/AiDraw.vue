@@ -309,7 +309,7 @@ window.onresize = () => resizeElement()
 
 // 参数选项
 const aspectRatios = ['1:1', '3:4', '4:3', '9:16', '16:9']
-const imageSizes = ['512', '1K', '2K', '4K']
+const imageSizes = ['1K', '2K', '4K']
 const qualities = [
   { name: '低', value: 'low' },
   { name: '中', value: 'medium' },
