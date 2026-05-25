@@ -87,6 +87,10 @@ func (s *Service) processNextTask() {
 	}
 }
 
+func (s *Service) ListMediaAssetGroup(req *ListMediaAssetGroupReq) (*ListMediaAssetGroupResp, error) {
+	return s.client.ListMediaAssetGroup(req)
+}
+
 func (s *Service) CreateTask(userId uint, req *CreateJobReq) (*model.SeedanceJob, error) {
 	taskParams := map[string]any{
 		"content":        req.Content,

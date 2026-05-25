@@ -31,10 +31,10 @@
     <template v-else>
       <div v-if="fileList.length > 0" class="file-grid">
         <div v-for="(url, index) in fileList" :key="index" class="file-item">
-          <el-image v-if="isImage(url)" :src="url" fit="cover" class="file-thumb" />
+          <el-image v-if="isImage(url)" :src="previewUrl(url)" fit="cover" class="file-thumb" />
           <div v-else class="file-icon-wrap">
             <i :class="'iconfont icon-' + getFileIcon(url)" class="file-icon"></i>
-            <span class="file-ext">{{ fileExt(url) }}</span>
+            <span class="file-ext">{{ fileTitle(url) }}</span>
           </div>
           <div class="file-overlay">
             <el-button type="danger" :icon="Delete" size="small" circle @click="removeFile(index)" />
@@ -88,6 +88,7 @@ const props = defineProps({
   maxSize: { type: Number, default: 50 },
   tip: { type: String, default: '' },
   placeholder: { type: String, default: '拖拽文件到此处，或点击上传' },
+  previewMap: { type: Object, default: () => ({}) },
 })
 
 const emit = defineEmits(['update:modelValue', 'upload-success'])
@@ -121,15 +122,25 @@ function getFileIconFromAccept(accept) {
 }
 
 function getFileIcon(url) {
-  const ext = url.split('.').pop().toLowerCase()
+  if (props.previewMap[url]?.preview_url) return 'image'
+  const ext = url.split('?')[0].split('.').pop().toLowerCase()
   if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
   if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(ext)) return 'mp3'
   return 'image'
 }
 
 function isImage(url) {
+  if (props.previewMap[url]?.preview_url) return true
   const ext = url.split('?')[0].split('.').pop().toLowerCase()
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)
+}
+
+function previewUrl(url) {
+  return props.previewMap[url]?.preview_url || url
+}
+
+function fileTitle(url) {
+  return props.previewMap[url]?.title || fileExt(url)
 }
 
 function fileExt(url) {
