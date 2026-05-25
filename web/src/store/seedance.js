@@ -7,7 +7,7 @@ import { ElMessageBox } from 'element-plus'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
-import { splitSeedanceReferenceUrls } from './seedanceReferences'
+import { splitSeedanceReferenceUrls, transformSeedancePromptMentions } from './seedanceReferences'
 
 export const useSeedanceStore = defineStore('seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -354,17 +354,21 @@ export const useSeedanceStore = defineStore('seedance', () => {
         await submitVeoTask()
         return
       }
-      const referenceGroups = splitSeedanceReferenceUrls(multimodalRefParams.reference_urls || [])
+      const referenceUrls = activeMode.value === 'multimodal_ref' ? multimodalRefParams.reference_urls || [] : []
       const requestData = {
         task_type: activeMode.value,
-        prompt: currentPrompt.value,
+        prompt: activeMode.value === 'multimodal_ref'
+          ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls)
+          : currentPrompt.value,
         model: multimodalRefParams.model,
-        ...referenceGroups,
         resolution: multimodalRefParams.resolution,
         ratio: multimodalRefParams.ratio,
         duration: multimodalRefParams.duration,
         generate_audio: multimodalRefParams.generate_audio,
         watermark: multimodalRefParams.watermark,
+      }
+      if (activeMode.value === 'multimodal_ref') {
+        Object.assign(requestData, splitSeedanceReferenceUrls(referenceUrls))
       }
 
       const response = await httpPost('/api/seedance/task', requestData)

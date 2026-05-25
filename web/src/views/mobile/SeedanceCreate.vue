@@ -29,7 +29,23 @@
 
       <!-- 提示词 -->
       <div class="form-item" v-if="store.activeMode !== 'image_to_video_first'">
-        <van-field v-model="store.currentPrompt" type="textarea" rows="3" placeholder="描述你想生成的视频画面..." maxlength="1000" show-word-limit />
+        <div class="prompt-box">
+          <van-field
+            ref="promptFieldRef"
+            v-model="store.currentPrompt"
+            type="textarea"
+            rows="3"
+            placeholder="描述你想生成的视频画面..."
+            maxlength="1000"
+            show-word-limit
+            @input="onPromptInput"
+            @click="rememberPromptCursor"
+            @keyup="rememberPromptCursor"
+            @select="rememberPromptCursor"
+            @blur="onPromptBlur"
+          />
+          <button type="button" class="mention-btn" @mousedown.prevent="toggleMentionPicker">@</button>
+        </div>
       </div>
 
       <div class="form-item">
@@ -120,21 +136,43 @@
     <van-dialog v-model:show="store.showVideoDialog" title="视频预览" :show-confirm-button="false" close-on-click-overlay>
       <video v-if="store.currentVideoUrl" :src="store.currentVideoUrl" controls autoplay style="width: 100%" />
     </van-dialog>
+
+    <van-popup v-model:show="showMentionPicker" round position="bottom">
+      <div class="mention-sheet">
+        <div class="mention-title">选择参考素材</div>
+        <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
+        <button
+          v-for="option in mentionOptions"
+          :key="option.label"
+          type="button"
+          class="mention-option"
+          @click="insertMention(option.label)"
+        >
+          <span>{{ option.label }}</span>
+          <small>{{ option.description }}</small>
+        </button>
+      </div>
+    </van-popup>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
+import { buildSeedanceMentionOptions } from '@/store/seedanceReferences'
 
 const store = useSeedanceStore()
 const showModelPicker = ref(false)
+const showMentionPicker = ref(false)
+const promptFieldRef = ref(null)
+const promptCursor = ref(0)
 
 const modelColumns = computed(() => store.videoModels.map((model) => ({ text: model.label, value: model.value })))
 const selectedModelLabel = computed(() => store.currentModelConfig.label)
 
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
+const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || []))
 const currentRatio = computed({
   get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,
   set: (value) => {
@@ -145,6 +183,47 @@ const currentRatio = computed({
     }
   },
 })
+
+function getPromptTextarea() {
+  return promptFieldRef.value?.$el?.querySelector('textarea')
+}
+
+function rememberPromptCursor() {
+  const textarea = getPromptTextarea()
+  if (textarea) promptCursor.value = textarea.selectionStart ?? store.currentPrompt.length
+}
+
+function onPromptInput() {
+  rememberPromptCursor()
+  const textarea = getPromptTextarea()
+  const cursor = textarea?.selectionStart ?? store.currentPrompt.length
+  if ((store.currentPrompt || '')[cursor - 1] === '@') showMentionPicker.value = true
+}
+
+function onPromptBlur() {
+  rememberPromptCursor()
+}
+
+function toggleMentionPicker() {
+  rememberPromptCursor()
+  showMentionPicker.value = !showMentionPicker.value
+}
+
+async function insertMention(label) {
+  const cursor = promptCursor.value
+  const prompt = store.currentPrompt || ''
+  const start = cursor > 0 && prompt[cursor - 1] === '@' ? cursor - 1 : cursor
+  const prefix = prompt.slice(0, start)
+  const suffix = prompt.slice(cursor)
+  store.currentPrompt = `${prefix}${label}${suffix}`
+  showMentionPicker.value = false
+  await nextTick()
+  const nextCursor = prefix.length + label.length
+  const textarea = getPromptTextarea()
+  textarea?.focus()
+  textarea?.setSelectionRange(nextCursor, nextCursor)
+  promptCursor.value = nextCursor
+}
 
 function onModelConfirm(option) {
   const value = option?.value ?? option?.selectedOptions?.[0]?.value
@@ -229,6 +308,58 @@ onUnmounted(() => store.cleanup())
 }
 .form-item { margin-bottom: 12px; }
 .form-label { font-size: 13px; color: #666; margin-bottom: 6px; display: block; }
+.prompt-box {
+  position: relative;
+}
+.mention-btn {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 1;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #ecf5ff;
+  color: var(--van-primary-color);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+}
+.mention-sheet {
+  padding: 14px 16px 18px;
+}
+.mention-title {
+  margin-bottom: 10px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+.mention-empty {
+  padding: 18px 0;
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+}
+.mention-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 10px;
+  background: #f7f8fa;
+  color: #323233;
+  font-size: 14px;
+  text-align: left;
+  margin-bottom: 8px;
+}
+.mention-option small {
+  color: #969799;
+  font-size: 12px;
+}
 
 .model-btns, .ratio-btns { display: flex; gap: 8px; }
 .model-btn, .ratio-btn {

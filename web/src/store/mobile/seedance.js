@@ -5,7 +5,7 @@ import { replaceImg } from '@/utils/libs'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
-import { splitSeedanceReferenceUrls } from '../seedanceReferences'
+import { splitSeedanceReferenceUrls, transformSeedancePromptMentions } from '../seedanceReferences'
 
 export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -192,10 +192,13 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         }
         return
       }
+      const referenceUrls = activeMode.value === 'multimodal_ref' ? multimodalRefParams.reference_urls || [] : []
       const p = getParams()
       const req = {
         task_type: activeMode.value,
-        prompt: currentPrompt.value,
+        prompt: activeMode.value === 'multimodal_ref'
+          ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls)
+          : currentPrompt.value,
         model: p.model,
         resolution: p.resolution,
         ratio: p.ratio,
@@ -210,7 +213,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         req.last_frame_url = imageToVideoDualParams.last_frame_url
       }
       if (activeMode.value === 'multimodal_ref') {
-        Object.assign(req, splitSeedanceReferenceUrls(multimodalRefParams.reference_urls || []))
+        Object.assign(req, splitSeedanceReferenceUrls(referenceUrls))
       }
       if (activeMode.value === 'edit_video') {
         req.ref_video_url = editVideoParams.ref_video_url
