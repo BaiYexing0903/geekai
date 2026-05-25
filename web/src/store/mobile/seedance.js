@@ -5,7 +5,7 @@ import { replaceImg } from '@/utils/libs'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
-import { splitSeedanceReferenceUrls, transformSeedancePromptMentions } from '../seedanceReferences'
+import { buildUploadedPortrait, normalizePortraitAsset, splitSeedanceReferenceUrls, transformSeedancePromptMentions } from '../seedanceReferences'
 
 export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -25,6 +25,8 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   const currentVideoUrl = ref('')
   const portraitDialogVisible = ref(false)
   const portraitLoading = ref(false)
+  const portraitUploadLoading = ref(false)
+  const portraitActiveTab = ref('library')
   const portraitList = ref([])
   const portraitTotal = ref(0)
   const portraitFilters = reactive({ page: 1, page_size: 24, gender: '', country: '', ages: [], occupation: '' })
@@ -195,7 +197,8 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   }
 
   const selectPortrait = (portrait) => {
-    const assetUrl = portrait.asset_url
+    const normalized = normalizePortraitAsset(portrait)
+    const assetUrl = normalized.asset_url
     if (!assetUrl) return
     if ((multimodalRefParams.reference_urls || []).includes(assetUrl)) {
       showMessageError('已选择该虚拟人像')
@@ -207,10 +210,28 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     }
     multimodalRefParams.reference_urls.push(assetUrl)
     referenceAssetPreviews[assetUrl] = {
-      preview_url: portrait.preview_url,
-      title: portrait.title,
+      preview_url: normalized.preview_url,
+      title: normalized.title,
     }
     portraitDialogVisible.value = false
+  }
+
+  const registerUploadedPortrait = async (imageUrl, name = '上传人像') => {
+    try {
+      portraitUploadLoading.value = true
+      const response = await httpPost('/api/seedance/assets', buildUploadedPortrait(imageUrl, name))
+      const portrait = normalizePortraitAsset({
+        ...(response.data || {}),
+        preview_url: response.data?.preview_url || imageUrl,
+        name: response.data?.name || name,
+      })
+      selectPortrait(portrait)
+      showMessageOK('人像上传成功')
+    } catch (error) {
+      showMessageError(error.message || '人像上传失败')
+    } finally {
+      portraitUploadLoading.value = false
+    }
   }
 
   const submitTask = async () => {
@@ -334,12 +355,13 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
   return {
     activeMode, loading, submitting, currentList, listLoading, listFinished,
     isLogin, userPower, currentPrompt, selectedModel, powerConfig, showVideoDialog, currentVideoUrl,
-    portraitDialogVisible, portraitLoading, portraitList, portraitTotal, portraitFilters, referenceAssetPreviews,
+    portraitDialogVisible, portraitLoading, portraitUploadLoading, portraitActiveTab,
+    portraitList, portraitTotal, portraitFilters, referenceAssetPreviews,
     modes, videoModels, currentModelConfig, isVeo, ratioOptions, veoRatioOptions, veoResolutionOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
     multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
     init, switchMode: (m) => { activeMode.value = m }, getModeName, getStatusText,
-    fetchData, fetchPortraits, openPortraitDialog, selectPortrait, submitTask, removeJob, retryTask, playVideo, cleanup,
+    fetchData, fetchPortraits, openPortraitDialog, selectPortrait, registerUploadedPortrait, submitTask, removeJob, retryTask, playVideo, cleanup,
   }
 })

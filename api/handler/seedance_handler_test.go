@@ -133,3 +133,23 @@ func TestSeedanceStatusFilterMapsUiFiltersToJobStatuses(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeSeedanceCreatedAsset(t *testing.T) {
+	got := normalizeSeedanceCreatedAsset(SeedanceCreateAssetRequest{
+		URL:  "https://example.com/person.jpg",
+		Name: "测试人像",
+	}, &seedance.CreateAssetResp{ID: "asset-abc"})
+
+	if got.ID != "asset-abc" {
+		t.Fatalf("expected id asset-abc, got %q", got.ID)
+	}
+	if got.AssetURL != "asset://asset-abc" {
+		t.Fatalf("expected asset url, got %q", got.AssetURL)
+	}
+	if got.PreviewURL != "https://example.com/person.jpg" {
+		t.Fatalf("expected preview url, got %q", got.PreviewURL)
+	}
+	if got.Name != "测试人像" {
+		t.Fatalf("expected name, got %q", got.Name)
+	}
+}

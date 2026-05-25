@@ -179,20 +179,35 @@
     <van-popup v-model:show="store.portraitDialogVisible" round position="bottom" :style="{ height: '82%' }">
       <div class="portrait-sheet">
         <div class="portrait-title">选择虚拟人像</div>
-        <div class="portrait-filters">
-          <van-field v-model="store.portraitFilters.gender" placeholder="性别：女性/男性" @blur="store.fetchPortraits(1)" />
-          <van-field v-model="store.portraitFilters.country" placeholder="国家，如：中国" @blur="store.fetchPortraits(1)" />
-          <van-field v-model="store.portraitFilters.occupation" placeholder="职业，如：演员" @blur="store.fetchPortraits(1)" />
-        </div>
-        <van-loading v-if="store.portraitLoading" />
-        <div v-else class="portrait-grid">
-          <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
-            <img :src="portrait.preview_url" alt="" />
-            <strong>{{ portrait.title }}</strong>
-            <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
-          </button>
-          <van-empty v-if="store.portraitList.length === 0" description="没有找到虚拟人像" />
-        </div>
+        <van-tabs v-model:active="store.portraitActiveTab">
+          <van-tab title="人像库" name="library">
+            <div class="portrait-filters">
+              <van-field v-model="store.portraitFilters.gender" placeholder="性别：女性/男性" @blur="store.fetchPortraits(1)" />
+              <van-field v-model="store.portraitFilters.country" placeholder="国家，如：中国" @blur="store.fetchPortraits(1)" />
+              <van-field v-model="store.portraitFilters.occupation" placeholder="职业，如：演员" @blur="store.fetchPortraits(1)" />
+            </div>
+            <van-loading v-if="store.portraitLoading" />
+            <div v-else class="portrait-grid">
+              <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
+                <img :src="portrait.preview_url" alt="" />
+                <strong>{{ portrait.title }}</strong>
+                <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
+              </button>
+              <van-empty v-if="store.portraitList.length === 0" description="没有找到虚拟人像" />
+            </div>
+          </van-tab>
+          <van-tab title="上传人像" name="upload">
+            <div class="portrait-upload-mobile">
+              <van-uploader
+                :after-read="uploadPortraitImage"
+                accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif"
+                :max-size="30 * 1024 * 1024"
+              />
+              <p>上传本地人像图片，系统会自动注册为 Seedance 素材。</p>
+              <van-loading v-if="store.portraitUploadLoading">正在注册人像素材</van-loading>
+            </div>
+          </van-tab>
+        </van-tabs>
       </div>
     </van-popup>
 
@@ -227,6 +242,8 @@ import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
 import { buildSeedanceMentionOptions } from '@/store/seedanceReferences'
+import { httpPost } from '@/utils/http'
+import { replaceImg } from '@/utils/libs'
 
 const store = useSeedanceStore()
 const showModelPicker = ref(false)
@@ -239,6 +256,15 @@ const selectedModelLabel = computed(() => store.currentModelConfig.label)
 
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
 const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || [], store.referenceAssetPreviews))
+
+async function uploadPortraitImage(file) {
+  const uploadFile = file.file || file
+  const formData = new FormData()
+  formData.append('file', uploadFile)
+  const response = await httpPost('/api/upload', formData)
+  const imageUrl = replaceImg(response.data.url)
+  await store.registerUploadedPortrait(imageUrl, uploadFile.name.replace(/\.[^.]+$/, ''))
+}
 const currentRatio = computed({
   get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,
   set: (value) => {
@@ -493,6 +519,16 @@ onUnmounted(() => store.cleanup())
   color: #888;
   font-size: 12px;
   margin-top: 3px;
+}
+.portrait-upload-mobile {
+  padding: 16px;
+  text-align: center;
+  color: var(--van-text-color-2);
+}
+
+.portrait-upload-mobile p {
+  margin: 12px 0;
+  font-size: 13px;
 }
 .mention-text {
   display: flex;

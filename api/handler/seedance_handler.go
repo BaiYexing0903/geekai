@@ -39,6 +39,7 @@ func (h *SeedanceHandler) RegisterRoutes() {
 	{
 		group.POST("task", h.CreateTask)
 		group.POST("portraits", h.Portraits)
+		group.POST("assets", h.CreateAsset)
 		group.GET("power-config", h.GetPowerConfig)
 		group.POST("jobs", h.Jobs)
 		group.GET("remove", h.Remove)
@@ -81,6 +82,19 @@ type SeedancePortraitListResponse struct {
 	PageSize int                    `json:"page_size"`
 }
 
+type SeedanceCreateAssetRequest struct {
+	URL       string `json:"url" binding:"required"`
+	Name      string `json:"name"`
+	AssetType string `json:"asset_type"`
+}
+
+type SeedanceCreateAssetResponse struct {
+	ID         string `json:"id"`
+	AssetURL   string `json:"asset_url"`
+	PreviewURL string `json:"preview_url"`
+	Name       string `json:"name"`
+}
+
 type SeedancePortraitItem struct {
 	AssetID     string                      `json:"asset_id"`
 	AssetURL    string                      `json:"asset_url"`
@@ -113,6 +127,15 @@ func normalizeSeedancePortraits(apiResp *seedance.ListMediaAssetGroupResp) Seeda
 		})
 	}
 	return result
+}
+
+func normalizeSeedanceCreatedAsset(req SeedanceCreateAssetRequest, asset *seedance.CreateAssetResp) SeedanceCreateAssetResponse {
+	return SeedanceCreateAssetResponse{
+		ID:         asset.ID,
+		AssetURL:   "asset://" + asset.ID,
+		PreviewURL: req.URL,
+		Name:       req.Name,
+	}
 }
 
 func buildSeedancePortraitFilters(req SeedancePortraitListRequest) []seedance.MediaAssetFilter {
@@ -181,6 +204,32 @@ func (h *SeedanceHandler) Portraits(c *gin.Context) {
 		return
 	}
 	resp.SUCCESS(c, normalizeSeedancePortraits(apiResp))
+}
+
+func (h *SeedanceHandler) CreateAsset(c *gin.Context) {
+	var req SeedanceCreateAssetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.ERROR(c, "图片地址不能为空")
+		return
+	}
+	if req.AssetType == "" {
+		req.AssetType = "Image"
+	}
+	if req.AssetType != "Image" {
+		resp.ERROR(c, "上传人像仅支持图片素材")
+		return
+	}
+	asset, err := h.seedanceService.CreateAsset(&seedance.CreateAssetReq{
+		URL:       req.URL,
+		AssetType: req.AssetType,
+		Name:      req.Name,
+	})
+	if err != nil {
+		logger.Errorf("create seedance asset failed: %v", err)
+		resp.ERROR(c, "注册人像素材失败")
+		return
+	}
+	resp.SUCCESS(c, normalizeSeedanceCreatedAsset(req, asset))
 }
 
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {

@@ -143,3 +143,15 @@ type MediaAssetImage struct {
 	AssetID string `json:"AssetID"`
 	URL     string `json:"URL"`
 }
+
+type CreateAssetReq struct {
+	URL       string `json:"URL"`
+	AssetType string `json:"AssetType"`
+	Name      string `json:"Name,omitempty"`
+}
+
+type CreateAssetResp struct {
+	ID      string `json:"Id"`
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
