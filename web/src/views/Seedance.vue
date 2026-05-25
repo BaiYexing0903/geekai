@@ -13,20 +13,74 @@
             <el-option v-for="model in store.videoModels" :key="model.value" :label="model.label" :value="model.value" />
           </el-select>
         </div>
+        <!-- 创作模式 -->
+        <template v-if="!store.isVeo">
+          <div class="param-line pt">
+            <span class="label">创作模式：</span>
+          </div>
+          <div class="mode-buttons">
+            <div class="mode-grid">
+              <div
+                v-for="mode in store.modes"
+                :key="mode.key"
+                :class="['mode-btn', { active: store.activeMode === mode.key }]"
+                @click="switchSeedanceMode(mode.key)"
+              >
+                <i v-if="mode.icon" :class="['iconfont', `icon-${mode.icon}`]"></i>
+                <span>{{ mode.name }}</span>
+              </div>
+            </div>
+          </div>
+        </template>
 
         <!-- 提示词（非虚拟人像必须） -->
         <div v-if="store.activeMode !== 'image_to_video_first'" class="param-line pt">
           <span class="label">提示词：</span>
         </div>
         <div v-if="store.activeMode !== 'image_to_video_first'" class="param-line">
-          <el-input
-            v-model="store.currentPrompt"
-            type="textarea"
-            :autosize="{ minRows: 3, maxRows: 6 }"
-            placeholder="描述你想生成的视频画面..."
-            maxlength="1000"
-            show-word-limit
-          />
+          <div class="prompt-box">
+            <el-input
+              ref="promptInputRef"
+              v-model="store.currentPrompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 6 }"
+              placeholder="描述你想生成的视频画面..."
+              maxlength="1000"
+              show-word-limit
+              @input="onPromptInput"
+              @click="rememberPromptCursor"
+              @keyup="rememberPromptCursor"
+              @select="rememberPromptCursor"
+              @blur="onPromptBlur"
+            />
+            <el-button
+              v-if="store.activeMode === 'multimodal_ref'"
+              class="mention-btn"
+              text
+              @mousedown.prevent.stop="toggleMentionPicker"
+              @click.prevent.stop
+            >@</el-button>
+            <div v-if="store.activeMode === 'multimodal_ref' && showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
+              <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
+              <button
+                v-for="option in mentionOptions"
+                :key="option.label"
+                type="button"
+                class="mention-option"
+                @mousedown.prevent.stop
+                @click.stop="insertMention(option.label)"
+              >
+                <span class="mention-preview">
+                  <img v-if="option.type === 'image'" :src="option.url" alt="" />
+                  <i v-else :class="['iconfont', option.type === 'video' ? 'icon-video' : 'icon-mp3']"></i>
+                </span>
+                <span class="mention-text">
+                  <strong>{{ option.label }}</strong>
+                  <small>{{ option.description }}</small>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 参考素材 -->
@@ -41,6 +95,20 @@
             placeholder="上传首帧/尾帧图片，不上传则为文生视频"
             tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
           />
+          <template v-else-if="store.activeMode === 'image_to_video_dual'">
+            <FileUpload
+              v-model="store.imageToVideoDualParams.first_frame_url"
+              accept="image/*"
+              placeholder="上传首帧图片"
+              tip="首帧图片，必填"
+            />
+            <FileUpload
+              v-model="store.imageToVideoDualParams.last_frame_url"
+              accept="image/*"
+              placeholder="上传尾帧图片"
+              tip="尾帧图片，必填"
+            />
+          </template>
           <FileUpload
             v-else
             v-model="store.multimodalRefParams.reference_urls"
@@ -202,17 +270,22 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/seedance'
 import { Loading } from '@element-plus/icons-vue'
 import FileUpload from '@/components/FileUpload.vue'
+import { buildSeedanceMentionOptions } from '@/store/seedanceReferences'
 
 const store = useSeedanceStore()
+const promptInputRef = ref(null)
+const showMentionPicker = ref(false)
+const promptCursor = ref(0)
 
 const filterLabels = { all: '全部', processing: '进行中', succeeded: '已完成', failed: '失败' }
 
 const currentResolutionOptions = computed(() => store.isVeo ? store.veoResolutionOptions : store.resolutionOptions)
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
+const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || []))
 
 const currentResolution = computed({
   get: () => store.isVeo ? store.veoParams.resolution : getParams()?.resolution || '720p',
@@ -260,6 +333,54 @@ function getParams() {
   }
 }
 
+function getPromptTextarea() {
+  return promptInputRef.value?.textarea
+}
+
+function rememberPromptCursor() {
+  const textarea = getPromptTextarea()
+  if (textarea) promptCursor.value = textarea.selectionStart ?? store.currentPrompt.length
+}
+
+function onPromptInput() {
+  rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
+  const textarea = getPromptTextarea()
+  const cursor = textarea?.selectionStart ?? store.currentPrompt.length
+  if ((store.currentPrompt || '')[cursor - 1] === '@') showMentionPicker.value = true
+}
+
+function onPromptBlur() {
+  rememberPromptCursor()
+}
+
+function toggleMentionPicker() {
+  rememberPromptCursor()
+  if (store.activeMode !== 'multimodal_ref') return
+  showMentionPicker.value = true
+}
+
+function switchSeedanceMode(mode) {
+  store.switchMode(mode)
+  showMentionPicker.value = false
+}
+
+async function insertMention(label) {
+  const cursor = promptCursor.value
+  const prompt = store.currentPrompt || ''
+  const start = cursor > 0 && prompt[cursor - 1] === '@' ? cursor - 1 : cursor
+  const prefix = prompt.slice(0, start)
+  const suffix = prompt.slice(cursor)
+  store.currentPrompt = `${prefix}${label}${suffix}`
+  showMentionPicker.value = false
+  await nextTick()
+  const nextCursor = prefix.length + label.length
+  const textarea = getPromptTextarea()
+  textarea?.focus()
+  textarea?.setSelectionRange(nextCursor, nextCursor)
+  promptCursor.value = nextCursor
+}
+
 function onModelChange(value) {
   const model = store.videoModels.find((item) => item.value === value)
   if (!model) return
@@ -269,6 +390,7 @@ function onModelChange(value) {
     return
   }
   store.multimodalRefParams.model = model.model
+  store.imageToVideoDualParams.model = model.model
   store.fetchData(1)
 }
 
@@ -305,8 +427,10 @@ onUnmounted(() => store.cleanup())
 }
 .mode-btn {
   display: flex;
+  min-height: 74px;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 8px 4px;
   border-radius: 8px;
   cursor: pointer;
@@ -342,6 +466,23 @@ onUnmounted(() => store.cleanup())
   }
   .el-select, .el-input {
     width: 100%;
+  }
+}
+.prompt-box {
+  position: relative;
+  .mention-btn {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    width: 24px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    font-weight: 600;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    z-index: 1;
   }
 }
 
@@ -473,6 +614,80 @@ onUnmounted(() => store.cleanup())
 .preview-video {
   width: 100%;
   max-height: 70vh;
+}
+
+.mention-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+}
+.mention-empty {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
+}
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
+}
+.mention-preview {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  i {
+    font-size: 22px;
+    color: var(--el-text-color-secondary);
+  }
+}
+.mention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  strong {
+    font-weight: 600;
+  }
+  small {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 768px) {

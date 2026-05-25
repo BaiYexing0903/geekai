@@ -7,7 +7,7 @@ import { ElMessageBox } from 'element-plus'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
-import { splitSeedanceReferenceUrls } from './seedanceReferences'
+import { splitSeedanceReferenceUrls, transformSeedancePromptMentions } from './seedanceReferences'
 
 export const useSeedanceStore = defineStore('seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -57,12 +57,10 @@ export const useSeedanceStore = defineStore('seedance', () => {
     { label: '21:9', value: '21:9' },
   ]
 
-  const durationOptions = [
-    { label: '5秒', value: 5 },
-    { label: '8秒', value: 8 },
-    { label: '10秒', value: 10 },
-    { label: '自动', value: -1 },
-  ]
+  const durationOptions = Array.from({ length: 12 }, (_, index) => {
+    const value = index + 4
+    return { label: `${value}秒`, value }
+  })
 
   const veoResolutionOptions = [
     { label: '720p', value: '720p' },
@@ -354,17 +352,30 @@ export const useSeedanceStore = defineStore('seedance', () => {
         await submitVeoTask()
         return
       }
-      const referenceGroups = splitSeedanceReferenceUrls(multimodalRefParams.reference_urls || [])
+      const referenceUrls = activeMode.value === 'multimodal_ref' ? multimodalRefParams.reference_urls || [] : []
+      const p = getStoreParams()
+      if (activeMode.value === 'image_to_video_dual' && (!imageToVideoDualParams.first_frame_url || !imageToVideoDualParams.last_frame_url)) {
+        showMessageError('请上传首帧和尾帧图片')
+        return
+      }
       const requestData = {
         task_type: activeMode.value,
-        prompt: currentPrompt.value,
-        model: multimodalRefParams.model,
-        ...referenceGroups,
-        resolution: multimodalRefParams.resolution,
-        ratio: multimodalRefParams.ratio,
-        duration: multimodalRefParams.duration,
-        generate_audio: multimodalRefParams.generate_audio,
-        watermark: multimodalRefParams.watermark,
+        prompt: activeMode.value === 'multimodal_ref'
+          ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls)
+          : currentPrompt.value,
+        model: p.model,
+        resolution: p.resolution,
+        ratio: p.ratio,
+        duration: p.duration,
+        generate_audio: p.generate_audio,
+        watermark: p.watermark,
+      }
+      if (activeMode.value === 'image_to_video_dual') {
+        requestData.first_frame_url = imageToVideoDualParams.first_frame_url
+        requestData.last_frame_url = imageToVideoDualParams.last_frame_url
+      }
+      if (activeMode.value === 'multimodal_ref') {
+        Object.assign(requestData, splitSeedanceReferenceUrls(referenceUrls))
       }
 
       const response = await httpPost('/api/seedance/task', requestData)

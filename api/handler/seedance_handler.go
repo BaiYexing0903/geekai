@@ -65,7 +65,12 @@ type SeedanceTaskRequest struct {
 }
 
 func isSeedanceTaskTypeAllowed(taskType string) bool {
-	return taskType == string(model.SDModeMultimodalRef)
+	switch taskType {
+	case string(model.SDModeMultimodalRef), string(model.SDModeImageToVideoDual):
+		return true
+	default:
+		return false
+	}
 }
 
 func seedanceStatusFilter(filter string) []model.SDTaskStatus {
@@ -88,7 +93,7 @@ func (h *SeedanceHandler) CreateTask(c *gin.Context) {
 		return
 	}
 	if !isSeedanceTaskTypeAllowed(req.TaskType) {
-		resp.ERROR(c, "Seedance 仅支持多模态参考")
+		resp.ERROR(c, "Seedance 仅支持多模态参考和首尾帧")
 		return
 	}
 

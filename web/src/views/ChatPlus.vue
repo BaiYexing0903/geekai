@@ -287,7 +287,14 @@
                 <div class="input-box-inner">
                   <div class="input-body">
                     <div ref="textHeightRef" class="hide-div">{{ prompt }}</div>
-                    <div class="input-border">
+                    <div
+                      class="input-border"
+                      :class="{ 'is-dragging-file': isDraggingFiles }"
+                      @dragenter.prevent="onDragEnterUpload"
+                      @dragover="onDragOverUpload"
+                      @dragleave="onDragLeaveUpload"
+                      @drop="onDropUpload"
+                    >
                       <div class="input-inner">
                         <div class="file-list" v-if="files.length > 0">
                           <file-list :files="files" @remove-file="removeFile" />
@@ -299,6 +306,7 @@
                           v-model="prompt"
                           @keydown="onInput"
                           @input="onInput"
+                          @paste="onPasteUpload"
                           placeholder="按 Enter 键发送消息，使用 Shift + Enter 换行"
                           autofocus
                         >
@@ -337,7 +345,7 @@
                             <el-button
                               @click="sendMessage()"
                               style="color: #754ff6"
-                              :disabled="isGenerating"
+                              :disabled="!canSendMessage"
                               v-else
                             >
                               <el-tooltip class="box-item" effect="dark" content="发送">
@@ -401,7 +409,7 @@ import { fetchEventSource } from '@microsoft/fetch-event-source'
 import Clipboard from 'clipboard'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import 'highlight.js/styles/a11y-dark.css'
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getUserToken } from '../store/session'
 import { substr } from '../utils/libs'
@@ -846,10 +854,17 @@ const sendMessage = (messageId = 0) => {
     return
   }
 
-  if (prompt.value === '') {
+  if (isUploadingFiles.value) {
+    ElMessage.warning('文件上传中，请稍后...')
+    return
+  }
+
+  if (prompt.value.trim() === '' && files.value.length === 0) {
     showMessageError('请输入要发送的消息！')
     return false
   }
+
+  const outgoingFiles = files.value.filter((file) => !file.uploading)
 
   // 追加消息
   chatData.value.push({
@@ -858,7 +873,7 @@ const sendMessage = (messageId = 0) => {
     icon: loginUser.value.avatar,
     content: {
       text: prompt.value,
-      files: files.value,
+      files: outgoingFiles,
     },
     model: getModelValue(modelID.value),
     created_at: new Date().getTime() / 1000,
@@ -895,7 +910,7 @@ const sendMessage = (messageId = 0) => {
     prompt: prompt.value,
     tools: toolSelected.value,
     stream: stream.value,
-    files: files.value,
+    files: outgoingFiles,
     last_msg_id: messageId || 0,
   })
 
@@ -1311,12 +1326,123 @@ const getModelValue = (model_id) => {
 }
 
 const files = ref([])
+const dragDepth = ref(0)
+const uploadState = reactive({
+  activeCount: 0,
+})
+const isUploadingFiles = computed(() => uploadState.activeCount > 0)
+const isDraggingFiles = computed(() => dragDepth.value > 0)
+const canSendMessage = computed(() => {
+  return !isGenerating.value && !isUploadingFiles.value && (prompt.value.trim() !== '' || files.value.length > 0)
+})
+
+const normalizeUploadedFile = (file) => {
+  if (file.url && file.url.indexOf('http') === -1) {
+    return {
+      ...file,
+      url: location.protocol + '//' + location.host + file.url,
+    }
+  }
+  return file
+}
+
 // 插入文件
 const insertFile = (file) => {
-  files.value.push(file)
+  files.value.push(normalizeUploadedFile(file))
 }
 const removeFile = (file) => {
   files.value = removeArrayItem(files.value, file, (v1, v2) => v1.url === v2.url)
+}
+
+const extractPastedFiles = (event) => {
+  const items = Array.from(event.clipboardData?.items || [])
+  return items
+    .filter((item) => item.kind === 'file')
+    .map((item) => item.getAsFile())
+    .filter(Boolean)
+}
+
+const getDroppedFiles = (event) => {
+  return Array.from(event.dataTransfer?.files || [])
+}
+
+const uploadChatFiles = async (uploadFiles) => {
+  const validFiles = uploadFiles.filter(Boolean)
+  if (validFiles.length === 0) {
+    return
+  }
+
+  for (const file of validFiles) {
+    const placeholder = {
+      uid: randString(16),
+      name: file.name || '粘贴图片',
+      size: file.size || 0,
+      uploading: true,
+    }
+
+    files.value.push(placeholder)
+    uploadState.activeCount += 1
+
+    const formData = new FormData()
+    formData.append('file', file, file.name || 'pasted-image.png')
+
+    try {
+      const res = await httpPost('/api/upload', formData)
+      const uploadedFile = normalizeUploadedFile(res.data)
+      const index = files.value.findIndex((item) => item.uid === placeholder.uid)
+      if (index !== -1) {
+        files.value.splice(index, 1, uploadedFile)
+      } else {
+        files.value.push(uploadedFile)
+      }
+      ElMessage.success({ message: '上传成功', duration: 500 })
+    } catch (e) {
+      files.value = removeArrayItem(files.value, placeholder, (v1, v2) => v1.uid === v2.uid)
+      ElMessage.error(`${placeholder.name} 上传失败:${e.message}`)
+    } finally {
+      uploadState.activeCount -= 1
+    }
+  }
+}
+
+const onPasteUpload = (event) => {
+  const pastedFiles = extractPastedFiles(event)
+  if (pastedFiles.length === 0) {
+    return
+  }
+
+  uploadChatFiles(pastedFiles)
+}
+
+const onDragEnterUpload = (event) => {
+  if (getDroppedFiles(event).length === 0 && !event.dataTransfer?.types?.includes('Files')) {
+    return
+  }
+  dragDepth.value += 1
+}
+
+const onDragOverUpload = (event) => {
+  if (!event.dataTransfer?.types?.includes('Files')) {
+    return
+  }
+  event.preventDefault()
+  event.dataTransfer.dropEffect = 'copy'
+}
+
+const onDragLeaveUpload = () => {
+  dragDepth.value = Math.max(0, dragDepth.value - 1)
+}
+
+const onDropUpload = (event) => {
+  const droppedFiles = getDroppedFiles(event)
+  dragDepth.value = 0
+
+  if (droppedFiles.length === 0) {
+    return
+  }
+
+  event.preventDefault()
+  uploadChatFiles(droppedFiles)
 }
 
 // 实时语音对话
@@ -1362,6 +1488,11 @@ const realtimeChat = () => {
       padding-right: 40px;
     }
   }
+}
+
+.input-border.is-dragging-file {
+  border-color: #754ff6 !important;
+  background-color: rgba(117, 79, 246, 0.06);
 }
 
 .model-selector-popover {
