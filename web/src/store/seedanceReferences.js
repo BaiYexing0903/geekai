@@ -8,8 +8,12 @@ const mentionConfig = {
   audio: { label: '音频', replacementUnit: '段音频' },
 }
 
+function getResourceFileName(url) {
+  return decodeURIComponent(url.split('?')[0].split('#')[0].split('/').pop() || '')
+}
+
 function getUrlExt(url) {
-  return url.split('?')[0].split('#')[0].split('.').pop().toLowerCase()
+  return getResourceFileName(url).split('.').pop().toLowerCase()
 }
 
 export function splitSeedanceReferenceUrls(urls) {
@@ -43,7 +47,7 @@ export function buildSeedanceMentionOptions(urls) {
     options.push({
       label: `@${config.label}${index}`,
       replacement: `第${index}${config.replacementUnit}`,
-      description: `${config.label}${index}`,
+      description: `${config.label}${index} · ${getResourceFileName(url)}`,
       type,
       index,
       url,

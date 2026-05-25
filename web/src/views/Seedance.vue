@@ -42,20 +42,32 @@
                   @select="rememberPromptCursor"
                   @blur="onPromptBlur"
                 />
-                <el-button class="mention-btn" text @mousedown.prevent="toggleMentionPicker">@</el-button>
+                <el-button
+                  class="mention-btn"
+                  text
+                  @mousedown.prevent.stop="toggleMentionPicker"
+                  @click.prevent.stop
+                >@</el-button>
               </div>
             </template>
-            <div class="mention-menu" @mousedown.prevent>
+            <div class="mention-menu" @mousedown.prevent.stop @click.stop>
               <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
               <button
                 v-for="option in mentionOptions"
                 :key="option.label"
                 type="button"
                 class="mention-option"
-                @click="insertMention(option.label)"
+                @mousedown.prevent.stop
+                @click.stop="insertMention(option.label)"
               >
-                <span>{{ option.label }}</span>
-                <small>{{ option.description }}</small>
+                <span class="mention-preview">
+                  <img v-if="option.type === 'image'" :src="option.url" alt="" />
+                  <i v-else :class="['iconfont', option.type === 'video' ? 'icon-video' : 'icon-mp3']"></i>
+                </span>
+                <span class="mention-text">
+                  <strong>{{ option.label }}</strong>
+                  <small>{{ option.description }}</small>
+                </span>
               </button>
             </div>
           </el-popover>
@@ -319,7 +331,7 @@ function onPromptBlur() {
 
 function toggleMentionPicker() {
   rememberPromptCursor()
-  showMentionPicker.value = !showMentionPicker.value
+  showMentionPicker.value = true
 }
 
 async function insertMention(label) {
@@ -587,8 +599,7 @@ onUnmounted(() => store.cleanup())
 .mention-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   border: 0;
   border-radius: 6px;
@@ -600,6 +611,35 @@ onUnmounted(() => store.cleanup())
   text-align: left;
   &:hover {
     background: var(--el-fill-color-light);
+  }
+}
+.mention-preview {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  i {
+    font-size: 22px;
+    color: var(--el-text-color-secondary);
+  }
+}
+.mention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  strong {
+    font-weight: 600;
   }
   small {
     color: var(--el-text-color-secondary);

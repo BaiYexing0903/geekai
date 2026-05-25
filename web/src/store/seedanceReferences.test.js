@@ -47,7 +47,7 @@ describe('buildSeedanceMentionOptions', () => {
       {
         label: '@图片1',
         replacement: '第1张图片',
-        description: '图片1',
+        description: '图片1 · image-a.png',
         type: 'image',
         index: 1,
         url: 'https://cdn.example.com/image-a.png',
@@ -55,7 +55,7 @@ describe('buildSeedanceMentionOptions', () => {
       {
         label: '@视频1',
         replacement: '第1个视频',
-        description: '视频1',
+        description: '视频1 · video-a.mp4',
         type: 'video',
         index: 1,
         url: 'https://cdn.example.com/video-a.mp4?token=1',
@@ -63,7 +63,7 @@ describe('buildSeedanceMentionOptions', () => {
       {
         label: '@音频1',
         replacement: '第1段音频',
-        description: '音频1',
+        description: '音频1 · audio-a.wav',
         type: 'audio',
         index: 1,
         url: 'https://cdn.example.com/audio-a.wav#clip',
@@ -71,7 +71,7 @@ describe('buildSeedanceMentionOptions', () => {
       {
         label: '@图片2',
         replacement: '第2张图片',
-        description: '图片2',
+        description: '图片2 · image-b.WEBP',
         type: 'image',
         index: 2,
         url: 'https://cdn.example.com/image-b.WEBP',

@@ -44,7 +44,7 @@
             @select="rememberPromptCursor"
             @blur="onPromptBlur"
           />
-          <button type="button" class="mention-btn" @mousedown.prevent="toggleMentionPicker">@</button>
+          <button type="button" class="mention-btn" @mousedown.prevent.stop="toggleMentionPicker" @click.prevent.stop>@</button>
         </div>
       </div>
 
@@ -146,10 +146,17 @@
           :key="option.label"
           type="button"
           class="mention-option"
-          @click="insertMention(option.label)"
+          @mousedown.prevent.stop
+          @click.stop="insertMention(option.label)"
         >
-          <span>{{ option.label }}</span>
-          <small>{{ option.description }}</small>
+          <span class="mention-preview">
+            <img v-if="option.type === 'image'" :src="option.url" alt="" />
+            <van-icon v-else :name="option.type === 'video' ? 'video-o' : 'music-o'" size="22" />
+          </span>
+          <span class="mention-text">
+            <strong>{{ option.label }}</strong>
+            <small>{{ option.description }}</small>
+          </span>
         </button>
       </div>
     </van-popup>
@@ -206,7 +213,7 @@ function onPromptBlur() {
 
 function toggleMentionPicker() {
   rememberPromptCursor()
-  showMentionPicker.value = !showMentionPicker.value
+  showMentionPicker.value = true
 }
 
 async function insertMention(label) {
@@ -345,18 +352,43 @@ onUnmounted(() => store.cleanup())
 .mention-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   border: 0;
   border-radius: 8px;
-  padding: 12px 10px;
+  padding: 10px;
   background: #f7f8fa;
   color: #323233;
   font-size: 14px;
   text-align: left;
   margin-bottom: 8px;
+  gap: 10px;
 }
-.mention-option small {
+.mention-preview {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ebedf0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #969799;
+}
+.mention-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mention-text strong {
+  font-weight: 600;
+}
+.mention-text small {
   color: #969799;
   font-size: 12px;
 }
