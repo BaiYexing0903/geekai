@@ -96,3 +96,23 @@ export function transformSeedancePromptMentions(prompt, urls) {
     transformedPrompt,
   ].join('\n')
 }
+
+export function normalizePortraitAsset(asset) {
+  const assetId = asset.asset_id || asset.id || ''
+  const assetUrl = asset.asset_url || asset.url || (assetId ? `asset://${assetId}` : '')
+  return {
+    asset_id: assetId,
+    asset_url: assetUrl,
+    preview_url: asset.preview_url || '',
+    title: asset.title || asset.name || '上传人像',
+    metadata: asset.metadata || {},
+  }
+}
+
+export function buildUploadedPortrait(url, name) {
+  return {
+    url,
+    name,
+    asset_type: 'Image',
+  }
+}

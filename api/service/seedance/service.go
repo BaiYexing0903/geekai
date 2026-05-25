@@ -91,6 +91,10 @@ func (s *Service) ListMediaAssetGroup(req *ListMediaAssetGroupReq) (*ListMediaAs
 	return s.client.ListMediaAssetGroup(req)
 }
 
+func (s *Service) CreateAsset(req *CreateAssetReq) (*CreateAssetResp, error) {
+	return s.client.CreateAsset(req)
+}
+
 func (s *Service) CreateTask(userId uint, req *CreateJobReq) (*model.SeedanceJob, error) {
 	taskParams := map[string]any{
 		"content":        req.Content,
