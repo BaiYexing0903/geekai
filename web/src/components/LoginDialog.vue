@@ -12,7 +12,7 @@
           </template>
           <el-form :model="data" class="form space-y-5">
             <div class="block">
-              <el-input placeholder="账号" size="large" v-model="data.username" autocomplete="off">
+              <el-input placeholder="账号" size="large" v-model="data.username" autocomplete="new-username">
                 <template #prefix>
                   <el-icon>
                     <Iphone />
@@ -28,7 +28,7 @@
                 size="large"
                 v-model="data.password"
                 show-password
-                autocomplete="off"
+                autocomplete="new-password"
               >
                 <template #prefix>
                   <el-icon>
@@ -219,7 +219,7 @@
             size="large"
             v-model="data.password"
             show-password
-            autocomplete="off"
+            autocomplete="new-password"
           >
             <template #prefix>
               <el-icon>
@@ -236,7 +236,7 @@
             maxlength="16"
             v-model="data.repass"
             show-password
-            autocomplete="off"
+            autocomplete="new-password"
           >
             <template #prefix>
               <el-icon>

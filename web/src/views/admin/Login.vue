@@ -14,7 +14,7 @@
               v-model="username"
               placeholder="请输入用户名"
               size="large"
-              autocomplete="off"
+              autocomplete="new-username"
               autofocus
               @keyup.enter="login"
             >
@@ -30,7 +30,7 @@
               placeholder="请输入密码"
               size="large"
               show-password
-              autocomplete="off"
+              autocomplete="new-password"
               @keyup.enter="login"
             >
               <template #prefix>
