@@ -97,7 +97,12 @@
           maxlength="4096"
           type="textarea"
           placeholder="请在此输入绘画提示词"
+          @update:model-value="onPromptInput"
+          @click="rememberPromptCursor"
         />
+        <div v-if="params.mode === 'image_to_image' && params.images.length > 0" class="mention-trigger">
+          <van-button size="small" type="primary" plain round @click="toggleMentionPicker">@ 引用素材</van-button>
+        </div>
 
         <!-- 图生图上传 -->
         <div v-if="params.mode === 'image_to_image'" class="p-3">
@@ -213,6 +218,28 @@
     >
       复制
     </button>
+
+    <van-popup v-model:show="showMentionPicker" round position="bottom">
+      <div class="mention-sheet">
+        <div class="mention-title">选择参考素材</div>
+        <div v-if="mentionOptions.length === 0" class="mention-empty">请先上传参考图</div>
+        <button
+          v-for="option in mentionOptions"
+          :key="option.label"
+          type="button"
+          class="mention-option"
+          @click="insertMention(option.label)"
+        >
+          <span class="mention-preview">
+            <img :src="option.url" alt="" />
+          </span>
+          <span class="mention-text">
+            <strong>{{ option.label }}</strong>
+            <small>{{ option.description }}</small>
+          </span>
+        </button>
+      </div>
+    </van-popup>
   </div>
 </template>
 
@@ -232,7 +259,7 @@ import {
   showSuccessToast,
   showToast,
 } from 'vant'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const isLogin = ref(false)
@@ -287,6 +314,68 @@ const params = ref({
 })
 
 const uploadImages = ref([])
+
+// @ 引用素材
+const showMentionPicker = ref(false)
+const promptCursor = ref(0)
+
+const mentionOptions = computed(() => {
+  if (params.value.mode !== 'image_to_image') return []
+  const images = params.value.images || []
+  return images.map((url, i) => ({
+    label: `@图片${i + 1}`,
+    replacement: `第${i + 1}张图片`,
+    description: `图片${i + 1}`,
+    type: 'image',
+    url,
+  }))
+})
+
+function rememberPromptCursor() {
+  const len = (params.value.prompt || '').length
+  promptCursor.value = len
+}
+
+function onPromptInput() {
+  rememberPromptCursor()
+  if (params.value.mode !== 'image_to_image') return
+  const prompt = params.value.prompt || ''
+  if (prompt[promptCursor.value - 1] === '@') showMentionPicker.value = true
+}
+
+function toggleMentionPicker() {
+  rememberPromptCursor()
+  showMentionPicker.value = true
+}
+
+async function insertMention(label) {
+  const cursor = promptCursor.value
+  const prompt = params.value.prompt || ''
+  const start = cursor > 0 && prompt[cursor - 1] === '@' ? cursor - 1 : cursor
+  const prefix = prompt.slice(0, start)
+  const suffix = prompt.slice(cursor)
+  params.value.prompt = `${prefix}${label}${suffix}`
+  showMentionPicker.value = false
+  promptCursor.value = prefix.length + label.length
+}
+
+function transformPromptMentions(prompt) {
+  const images = params.value.images || []
+  if (!images.length) return prompt
+  const usedMentions = new Set()
+  const transformed = prompt.replace(/@图片(\d+)/g, (match, numStr) => {
+    const num = parseInt(numStr)
+    if (num >= 1 && num <= images.length) {
+      usedMentions.add(num)
+      return `第${num}张图片`
+    }
+    return match
+  })
+  if (!usedMentions.size) return prompt
+  const instructions = [...usedMentions].sort((a, b) => a - b)
+    .map(n => `第${n}张图片对应用户提示词中的"@图片${n}"。`)
+  return ['资源说明：', ...instructions, '', '用户要求：', transformed].join('\n')
+}
 
 const runningJobs = ref([])
 const finishedJobs = ref([])
@@ -390,7 +479,11 @@ const generate = () => {
   if (!isLogin.value) return showLoginDialog(router)
   if (params.value.prompt === '') return showToast('请输入绘画提示词！')
 
-  httpPost('/api/aidraw/image', params.value)
+  const submitParams = { ...params.value }
+  if (submitParams.mode === 'image_to_image') {
+    submitParams.prompt = transformPromptMentions(submitParams.prompt)
+  }
+  httpPost('/api/aidraw/image', submitParams)
     .then(() => {
       showSuccessToast('绘画任务推送成功')
       allowPulling.value = true
@@ -471,6 +564,7 @@ const sizeConfirm = (item) => {
 }
 
 const changeMode = () => {
+  showMentionPicker.value = false
   if (params.value.mode === 'text_to_image') {
     params.value.images = []
     uploadImages.value = []
@@ -488,4 +582,73 @@ const onDeleteImage = () => {
 
 <style lang="scss">
 @use '@/assets/css/mobile/image-sd.scss' as *;
+
+.mention-trigger {
+  padding: 4px 16px;
+}
+.mention-sheet {
+  padding: 16px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+.mention-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.mention-empty {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--van-text-color-3);
+}
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px;
+  background: transparent;
+  color: var(--van-text-color);
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+  &:active {
+    background: var(--van-active-color);
+  }
+}
+.mention-preview {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--van-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.mention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  strong {
+    font-weight: 600;
+  }
+  small {
+    color: var(--van-text-color-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>

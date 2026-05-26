@@ -95,15 +95,47 @@
               </template>
 
               <div class="param-line">
-                <el-input
-                  v-model="params.prompt"
-                  :autosize="{ minRows: 3, maxRows: 20 }"
-                  type="textarea"
-                  ref="promptRef"
-                  maxlength="4096"
-                  show-word-limit
-                  placeholder="请在此输入绘画提示词"
-                />
+                <div class="prompt-box">
+                  <el-input
+                    v-model="params.prompt"
+                    :autosize="{ minRows: 3, maxRows: 20 }"
+                    type="textarea"
+                    ref="promptRef"
+                    maxlength="4096"
+                    show-word-limit
+                    placeholder="请在此输入绘画提示词"
+                    @input="onPromptInput"
+                    @click="rememberPromptCursor"
+                    @keyup="rememberPromptCursor"
+                    @select="rememberPromptCursor"
+                  />
+                  <el-button
+                    v-if="params.mode === 'image_to_image' && params.images.length > 0"
+                    class="mention-btn"
+                    text
+                    @mousedown.prevent.stop="toggleMentionPicker"
+                    @click.prevent.stop
+                  >@</el-button>
+                  <div v-if="showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
+                    <div v-if="mentionOptions.length === 0" class="mention-empty">请先上传参考图</div>
+                    <button
+                      v-for="option in mentionOptions"
+                      :key="option.label"
+                      type="button"
+                      class="mention-option"
+                      @mousedown.prevent.stop
+                      @click.stop="insertMention(option.label)"
+                    >
+                      <span class="mention-preview">
+                        <img :src="option.url" alt="" />
+                      </span>
+                      <span class="mention-text">
+                        <strong>{{ option.label }}</strong>
+                        <small>{{ option.description }}</small>
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="mt-2 mb-2" v-if="params.mode === 'image_to_image'">
                 <label class="text-gray-700 font-semibold">参考图</label>
@@ -288,7 +320,7 @@ import { httpGet, httpPost } from '@/utils/http'
 import { Delete } from '@element-plus/icons-vue'
 import Clipboard from 'clipboard'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, computed } from 'vue'
 import { LazyImg, Waterfall } from 'vue-waterfall-plugin-next'
 import 'vue-waterfall-plugin-next/dist/style.css'
 
@@ -354,6 +386,79 @@ const page = ref(1)
 const pageSize = ref(15)
 const isGenerating = ref(false)
 const promptRef = ref(null)
+
+// @ 引用素材
+const showMentionPicker = ref(false)
+const promptCursor = ref(0)
+
+const mentionOptions = computed(() => {
+  if (params.value.mode !== 'image_to_image') return []
+  const images = params.value.images || []
+  return images.map((url, i) => ({
+    label: `@图片${i + 1}`,
+    replacement: `第${i + 1}张图片`,
+    description: `图片${i + 1}`,
+    type: 'image',
+    url,
+  }))
+})
+
+function getPromptTextarea() {
+  return promptRef.value?.textarea
+}
+
+function rememberPromptCursor() {
+  const textarea = getPromptTextarea()
+  if (textarea) promptCursor.value = textarea.selectionStart ?? params.value.prompt.length
+}
+
+function onPromptInput() {
+  rememberPromptCursor()
+  if (params.value.mode !== 'image_to_image') return
+  const textarea = getPromptTextarea()
+  const cursor = textarea?.selectionStart ?? params.value.prompt.length
+  if ((params.value.prompt || '')[cursor - 1] === '@') showMentionPicker.value = true
+}
+
+function toggleMentionPicker() {
+  rememberPromptCursor()
+  if (params.value.mode !== 'image_to_image') return
+  showMentionPicker.value = true
+}
+
+async function insertMention(label) {
+  const cursor = promptCursor.value
+  const prompt = params.value.prompt || ''
+  const start = cursor > 0 && prompt[cursor - 1] === '@' ? cursor - 1 : cursor
+  const prefix = prompt.slice(0, start)
+  const suffix = prompt.slice(cursor)
+  params.value.prompt = `${prefix}${label}${suffix}`
+  showMentionPicker.value = false
+  await nextTick()
+  const nextCursor = prefix.length + label.length
+  const textarea = getPromptTextarea()
+  textarea?.focus()
+  textarea?.setSelectionRange(nextCursor, nextCursor)
+  promptCursor.value = nextCursor
+}
+
+function transformPromptMentions(prompt) {
+  const images = params.value.images || []
+  if (!images.length) return prompt
+  const usedMentions = new Set()
+  const transformed = prompt.replace(/@图片(\d+)/g, (match, numStr) => {
+    const num = parseInt(numStr)
+    if (num >= 1 && num <= images.length) {
+      usedMentions.add(num)
+      return `第${num}张图片`
+    }
+    return match
+  })
+  if (!usedMentions.size) return prompt
+  const instructions = [...usedMentions].sort((a, b) => a - b)
+    .map(n => `第${n}张图片对应用户提示词中的"@图片${n}"。`)
+  return ['资源说明：', ...instructions, '', '用户要求：', transformed].join('\n')
+}
 
 // Aidraw 模型过滤关键字
 const aidrawKeywords = ['gemini', 'gpt-image']
@@ -481,7 +586,11 @@ const generate = () => {
   }
 
   isGenerating.value = true
-  httpPost('/api/aidraw/image', params.value)
+  const submitParams = { ...params.value }
+  if (submitParams.mode === 'image_to_image') {
+    submitParams.prompt = transformPromptMentions(submitParams.prompt)
+  }
+  httpPost('/api/aidraw/image', submitParams)
     .then(() => {
       ElMessage.success('任务执行成功！')
       userPower.value -= drawPower.value
@@ -541,6 +650,7 @@ const changeModel = (model) => {
 }
 
 const changeMode = (mode) => {
+  showMentionPicker.value = false
   if (mode === 'text_to_image') {
     params.value.images = []
   }
@@ -550,4 +660,93 @@ const changeMode = (mode) => {
 <style lang="scss" scoped>
 @use '../assets/css/image-aidraw.scss' as *;
 @use '../assets/css/custom-scroll.scss' as *;
+
+.prompt-box {
+  position: relative;
+  .mention-btn {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    width: 24px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0;
+    border-radius: 50%;
+    font-weight: 600;
+    color: var(--el-color-primary);
+    background: var(--el-color-primary-light-9);
+    z-index: 1;
+  }
+}
+.mention-menu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  background: var(--el-bg-color-overlay);
+  box-shadow: var(--el-box-shadow-light);
+}
+.mention-empty {
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--el-text-color-placeholder);
+}
+.mention-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--el-text-color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  &:hover {
+    background: var(--el-fill-color-light);
+  }
+}
+.mention-preview {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--el-fill-color-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+.mention-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  strong {
+    font-weight: 600;
+  }
+  small {
+    color: var(--el-text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>
