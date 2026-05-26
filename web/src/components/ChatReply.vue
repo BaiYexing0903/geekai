@@ -3,7 +3,7 @@
     <div class="chat-line chat-line-reply-list" v-if="listStyle === 'list'">
       <div class="chat-line-inner">
         <div class="chat-icon">
-          <img :src="data.icon" alt="ChatGPT" />
+          <img :src="replyIcon" alt="ChatGPT" />
         </div>
 
         <div class="chat-item">
@@ -56,7 +56,7 @@
     <div class="chat-line chat-line-reply-chat" v-else>
       <div class="chat-line-inner">
         <div class="chat-icon">
-          <img :src="data.icon" alt="ChatGPT" />
+          <img :src="replyIcon" alt="ChatGPT" />
         </div>
         <div class="chat-item">
           <div class="content-wrapper">
@@ -124,7 +124,7 @@ import hl from 'highlight.js'
 import MarkdownIt from 'markdown-it'
 import emoji from 'markdown-it-emoji'
 import mathjaxPlugin from 'markdown-it-mathjax3'
-import { nextTick, onMounted, reactive, ref, watchEffect } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref, watchEffect } from 'vue'
 import Thinking from './Thinking.vue'
 // eslint-disable-next-line no-undef,no-unused-vars
 const props = defineProps({
@@ -195,9 +195,7 @@ md.use(mathjaxPlugin)
 md.use(emoji)
 const emits = defineEmits(['regen'])
 
-if (!props.data.icon) {
-  props.data.icon = 'images/gpt-icon.png'
-}
+const replyIcon = computed(() => props.data.icon || 'images/gpt-icon.png')
 
 const synthesis = (text) => {
   isPlaying.value = true

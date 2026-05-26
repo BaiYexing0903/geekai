@@ -1264,9 +1264,11 @@ const editUserPrompt = function (messageId) {
         content: '',
       })
 
-      disableInput(false)
-
       // 发送编辑后的消息
+      if (!store.socket?.conn) {
+        ElMessage.error('WebSocket 连接已断开，请刷新页面重试')
+        return
+      }
       store.socket.conn.send(
         JSON.stringify({
           channel: 'chat',
