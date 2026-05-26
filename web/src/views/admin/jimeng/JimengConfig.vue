@@ -51,6 +51,32 @@
           </el-form-item>
         </div>
         <el-divider />
+        <!-- 即梦4.0 API配置 -->
+        <div class="mb-3">
+          <h3 class="heading-3 mb-2">即梦4.0 API配置</h3>
+          <div class="py-3">
+            <Alert type="info">
+              <p>
+                即梦4.0文生图使用独立的REST API，需要配置API地址和Bearer Token。如不使用即梦4.0功能可留空。
+              </p>
+            </Alert>
+          </div>
+          <el-form-item label="API地址" prop="api_url">
+            <el-input
+              v-model="jimengConfig.api_url"
+              placeholder="例如: http://118.196.64.1"
+            />
+          </el-form-item>
+          <el-form-item label="Bearer Token" prop="bearer_token">
+            <el-input
+              v-model="jimengConfig.bearer_token"
+              type="password"
+              show-password
+              placeholder="请输入Bearer Token"
+            />
+          </el-form-item>
+        </div>
+        <el-divider />
         <!-- 算力配置分组 -->
         <div class="mb-3">
           <h3 class="heading-3 mb-3">算力配置</h3>
@@ -74,6 +100,50 @@
               v-model="jimengConfig.power.text_to_image"
               :min="1"
               placeholder="请输入文生图算力消耗"
+            />
+          </el-form-item>
+          <el-form-item>
+            <template #label>
+              <div class="label-title">
+                即梦4.0文生图算力
+                <el-tooltip
+                  effect="dark"
+                  content="用户使用即梦4.0文生图功能时消耗的算力"
+                  raw-content
+                  placement="right"
+                >
+                  <el-icon>
+                    <InfoFilled />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+            <el-input-number
+              v-model="jimengConfig.power.jimeng_v4_t2i"
+              :min="1"
+              placeholder="请输入即梦4.0文生图算力消耗"
+            />
+          </el-form-item>
+          <el-form-item>
+            <template #label>
+              <div class="label-title">
+                即梦4.0图生图算力
+                <el-tooltip
+                  effect="dark"
+                  content="用户使用即梦4.0图生图功能时消耗的算力"
+                  raw-content
+                  placement="right"
+                >
+                  <el-icon>
+                    <InfoFilled />
+                  </el-icon>
+                </el-tooltip>
+              </div>
+            </template>
+            <el-input-number
+              v-model="jimengConfig.power.jimeng_v4_i2i"
+              :min="1"
+              placeholder="请输入即梦4.0图生图算力消耗"
             />
           </el-form-item>
           <el-form-item>
@@ -208,8 +278,12 @@ import { onMounted, ref } from 'vue'
 const jimengConfig = ref({
   access_key: '',
   secret_key: '',
+  api_url: '',
+  bearer_token: '',
   power: {
     text_to_image: 10,
+    jimeng_v4_t2i: 30,
+    jimeng_v4_i2i: 30,
     image_to_image: 15,
     image_edit: 20,
     image_effects: 25,
@@ -266,8 +340,12 @@ const resetConfig = () => {
   jimengConfig.value = {
     access_key: '',
     secret_key: '',
+    api_url: '',
+    bearer_token: '',
     power: {
       text_to_image: 10,
+      jimeng_v4_t2i: 30,
+      jimeng_v4_i2i: 30,
       image_to_image: 15,
       image_edit: 20,
       image_effects: 25,

@@ -146,6 +146,39 @@ func (h *JimengHandler) CreateTask(c *gin.Context) {
 			"height":      req.Height,
 			"use_pre_llm": req.UsePreLLM,
 		}
+	case "jimeng_v4_t2i":
+		powerCost = h.getPowerFromConfig(model.JMTaskTypeJimengV4T2i)
+		taskType = model.JMTaskTypeJimengV4T2i
+		reqKey = jimeng.ReqKeyJimengV4T2i
+		modelName = "即梦4.0文生图"
+		if req.Scale == 0 {
+			req.Scale = 0.5
+		}
+		if req.Width == 0 {
+			req.Width = 2048
+		}
+		if req.Height == 0 {
+			req.Height = 2048
+		}
+		params = map[string]any{
+			"width":  req.Width,
+			"height": req.Height,
+			"scale":  req.Scale,
+		}
+	case "jimeng_v4_i2i":
+		powerCost = h.getPowerFromConfig(model.JMTaskTypeJimengV4I2i)
+		taskType = model.JMTaskTypeJimengV4I2i
+		reqKey = jimeng.ReqKeyJimengV4T2i
+		modelName = "即梦4.0图生图"
+		if req.Scale == 0 {
+			req.Scale = 0.5
+		}
+		params = map[string]any{
+			"scale": req.Scale,
+		}
+		if req.ImageInput != "" {
+			params["image_urls"] = []string{req.ImageInput}
+		}
 	case "image_to_image":
 		powerCost = h.getPowerFromConfig(model.JMTaskTypeImageToImage)
 		taskType = model.JMTaskTypeImageToImage
@@ -440,6 +473,10 @@ func (h *JimengHandler) getPowerFromConfig(taskType model.JMTaskType) int {
 	switch taskType {
 	case model.JMTaskTypeTextToImage:
 		return config.Power.TextToImage
+	case model.JMTaskTypeJimengV4T2i:
+		return config.Power.JimengV4T2i
+	case model.JMTaskTypeJimengV4I2i:
+		return config.Power.JimengV4I2i
 	case model.JMTaskTypeImageToImage:
 		return config.Power.ImageToImage
 	case model.JMTaskTypeImageEdit:
@@ -460,6 +497,8 @@ func (h *JimengHandler) GetPowerConfig(c *gin.Context) {
 	config := h.App.SysConfig.Jimeng
 	resp.SUCCESS(c, gin.H{
 		"text_to_image":  config.Power.TextToImage,
+		"jimeng_v4_t2i":  config.Power.JimengV4T2i,
+		"jimeng_v4_i2i":  config.Power.JimengV4I2i,
 		"image_to_image": config.Power.ImageToImage,
 		"image_edit":     config.Power.ImageEdit,
 		"image_effects":  config.Power.ImageEffects,

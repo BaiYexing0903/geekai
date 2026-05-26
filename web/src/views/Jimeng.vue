@@ -89,6 +89,79 @@
           </div>
         </div>
 
+        <!-- 即梦4.0文生图 -->
+        <div v-if="store.activeFunction === 'jimeng_v4_t2i'" class="function-panel">
+          <div class="param-line pt">
+            <span class="label">提示词：</span>
+          </div>
+          <div class="param-line">
+            <el-input
+              v-model="store.currentPrompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 20 }"
+              placeholder="请输入图片描述，越详细越好"
+              maxlength="800"
+              show-word-limit
+            />
+          </div>
+
+          <div class="param-line pt">
+            <span class="label">图片尺寸：</span>
+          </div>
+          <div class="param-line">
+            <el-select v-model="store.jimengV4T2iParams.size" placeholder="选择尺寸">
+              <el-option
+                v-for="opt in jimengV4ImageSizeOptions"
+                :key="opt.value"
+                :label="opt.label"
+                :value="opt.value"
+              />
+            </el-select>
+          </div>
+
+          <div class="param-line">
+            <span class="label">创意度</span>
+          </div>
+          <div class="item-group">
+            <el-slider v-model="store.jimengV4T2iParams.scale" :min="0" :max="1" :step="0.05" />
+          </div>
+        </div>
+
+        <!-- 即梦4.0图生图 -->
+        <div v-if="store.activeFunction === 'jimeng_v4_i2i'" class="function-panel">
+          <div class="param-line pt">
+            <span class="label">上传图片：</span>
+          </div>
+          <div class="param-line">
+            <ImageUpload
+              v-model="store.jimengV4I2iParams.image_input"
+              :max-count="1"
+              :multiple="false"
+            />
+          </div>
+
+          <div class="param-line pt">
+            <span class="label">提示词：</span>
+          </div>
+          <div class="param-line">
+            <el-input
+              v-model="store.currentPrompt"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 20 }"
+              placeholder="请输入图片描述，越详细越好"
+              maxlength="800"
+              show-word-limit
+            />
+          </div>
+
+          <div class="param-line">
+            <span class="label">创意度</span>
+          </div>
+          <div class="item-group">
+            <el-slider v-model="store.jimengV4I2iParams.scale" :min="0" :max="1" :step="0.05" />
+          </div>
+        </div>
+
         <!-- 图生图 -->
         <div v-if="store.activeFunction === 'image_to_image'" class="function-panel">
           <div class="param-line pt">
@@ -553,6 +626,7 @@ import Generating from '@/components/ui/Generating.vue'
 import {
   imageEffectsTemplateOptions,
   imageSizeOptions,
+  jimengV4ImageSizeOptions,
   useJimengStore,
   videoAspectRatioOptions,
 } from '@/store/jimeng'

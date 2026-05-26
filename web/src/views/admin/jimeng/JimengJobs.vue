@@ -64,6 +64,8 @@
             @change="handleQuery"
           >
             <el-option label="文生图" value="text_to_image" />
+            <el-option label="即梦4.0文生图" value="jimeng_v4_t2i" />
+            <el-option label="即梦4.0图生图" value="jimeng_v4_i2i" />
             <el-option label="图生图" value="image_to_image" />
             <el-option label="图像编辑" value="image_edit" />
             <el-option label="图像特效" value="image_effects" />
@@ -296,6 +298,8 @@ const formattedRawData = computed(() => {
 const getTaskTypeName = (type) => {
   const typeMap = {
     text_to_image: '文生图',
+    jimeng_v4_t2i: '即梦4.0文生图',
+    jimeng_v4_i2i: '即梦4.0图生图',
     image_to_image: '图生图',
     image_edit: '图像编辑',
     image_effects: '图像特效',

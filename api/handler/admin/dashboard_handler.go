@@ -127,7 +127,7 @@ func (h *DashboardHandler) Stats(c *gin.Context) {
 	h.DB.Model(&model.MidJourneyJob{}).Count(&mjJobs)
 	h.DB.Model(&model.SdJob{}).Count(&sdJobs)
 	h.DB.Model(&model.DallJob{}).Count(&dallJobs)
-	h.DB.Model(&model.JimengJob{}).Where("type IN ?", []string{"text_to_image", "image_to_image", "image_edit", "image_effects"}).Count(&jimengImageJobs)
+	h.DB.Model(&model.JimengJob{}).Where("type IN ?", []string{"text_to_image", "jimeng_v4_t2i", "jimeng_v4_i2i", "image_to_image", "image_edit", "image_effects"}).Count(&jimengImageJobs)
 	stats.ImageJobs = mjJobs + sdJobs + dallJobs + jimengImageJobs
 
 	logger.Info("stats.ImageJobs", stats.ImageJobs)
@@ -137,7 +137,7 @@ func (h *DashboardHandler) Stats(c *gin.Context) {
 	h.DB.Model(&model.MidJourneyJob{}).Where("created_at > ?", zeroTime).Count(&todayMjJobs)
 	h.DB.Model(&model.SdJob{}).Where("created_at > ?", zeroTime).Count(&todaySdJobs)
 	h.DB.Model(&model.DallJob{}).Where("created_at > ?", zeroTime).Count(&todayDallJobs)
-	h.DB.Model(&model.JimengJob{}).Where("type IN ?", []string{"text_to_image", "image_to_image", "image_edit", "image_effects"}).Where("created_at > ?", zeroTime).Count(&todayJimengImageJobs)
+	h.DB.Model(&model.JimengJob{}).Where("type IN ?", []string{"text_to_image", "jimeng_v4_t2i", "jimeng_v4_i2i", "image_to_image", "image_edit", "image_effects"}).Where("created_at > ?", zeroTime).Count(&todayJimengImageJobs)
 	stats.TodayImageJobs = todayMjJobs + todaySdJobs + todayDallJobs + todayJimengImageJobs
 
 	// 视频生成任务统计
