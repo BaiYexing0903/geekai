@@ -380,7 +380,7 @@ func (h *PaymentHandler) paySuccess(info payment.OrderInfo) error {
 	order.Status = types.OrderPaidSuccess
 	order.TradeNo = info.TradeId
 	order.Checked = true
-	err = h.DB.Debug().Updates(&order).Error
+	err = h.DB.Updates(&order).Error
 	if err != nil {
 		return fmt.Errorf("error with update order info: %v", err)
 	}

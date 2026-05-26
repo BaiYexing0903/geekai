@@ -263,7 +263,7 @@ func (h *ChatHandler) RemoveChat(c *gin.Context) {
 
 	tx := h.DB.Begin()
 	// 删除聊天记录
-	res := tx.Unscoped().Debug().Where("chat_id = ?", chatId).Delete(&model.ChatMessage{})
+	res := tx.Unscoped().Where("chat_id = ?", chatId).Delete(&model.ChatMessage{})
 	if res.Error != nil {
 		resp.ERROR(c, "failed to remove chat message")
 		return

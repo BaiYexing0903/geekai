@@ -26,12 +26,12 @@ import (
 )
 
 // CopyObject 拷贝对象
-func CopyObject(src interface{}, dst interface{}) error {
+func CopyObject(src interface{}, dst interface{}) (err error) {
 
 	// 这里做异常处理
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Errorf("copy object failed: %v", r)
+			err = fmt.Errorf("copy object failed: %v", r)
 		}
 	}()
 
