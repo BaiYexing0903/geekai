@@ -147,6 +147,9 @@ func (h *UserHandler) Register(c *gin.Context) {
 			resp.ERROR(c, "验证码错误")
 			return
 		}
+	} else {
+		resp.ERROR(c, "不支持的注册方式")
+		return
 	}
 
 	// check if the username is existing
@@ -349,8 +352,8 @@ func (h *UserHandler) createNewUser(user model.User, inviteCode string) (model.U
 
 	// 记录邀请关系
 	if inviteCode != "" {
-		inviteCode := model.InviteCode{}
-		err := h.DB.Where("code = ?", inviteCode).First(&inviteCode).Error
+		inviteRecord := model.InviteCode{}
+		err := h.DB.Where("code = ?", inviteCode).First(&inviteRecord).Error
 		if err != nil {
 			return user, fmt.Errorf("无效的邀请码")
 		}
@@ -358,10 +361,10 @@ func (h *UserHandler) createNewUser(user model.User, inviteCode string) (model.U
 		// 增加邀请数量
 		h.DB.Model(&model.InviteCode{}).Where("code = ?", inviteCode).UpdateColumn("reg_num", gorm.Expr("reg_num + ?", 1))
 		if h.App.SysConfig.Base.InvitePower > 0 {
-			err := h.userService.IncreasePower(inviteCode.UserId, h.App.SysConfig.Base.InvitePower, model.PowerLog{
+			err := h.userService.IncreasePower(inviteRecord.UserId, h.App.SysConfig.Base.InvitePower, model.PowerLog{
 				Type:   types.PowerInvite,
 				Model:  "Invite",
-				Remark: fmt.Sprintf("邀请用户注册奖励，金额：%d，邀请码：%s，新用户：%s", h.App.SysConfig.Base.InvitePower, inviteCode.Code, user.Username),
+				Remark: fmt.Sprintf("邀请用户注册奖励，金额：%d，邀请码：%s，新用户：%s", h.App.SysConfig.Base.InvitePower, inviteRecord.Code, user.Username),
 			})
 			if err != nil {
 				tx.Rollback()
@@ -370,10 +373,10 @@ func (h *UserHandler) createNewUser(user model.User, inviteCode string) (model.U
 
 			// 添加邀请记录
 			err = tx.Create(&model.InviteLog{
-				InviterId:  inviteCode.UserId,
+				InviterId:  inviteRecord.UserId,
 				UserId:     user.Id,
 				Username:   user.Username,
-				InviteCode: inviteCode.Code,
+				InviteCode: inviteRecord.Code,
 				Remark:     fmt.Sprintf("奖励 %d 算力", h.App.SysConfig.Base.InvitePower),
 			}).Error
 			if err != nil {
@@ -418,7 +421,8 @@ func (h *UserHandler) doLogin(user *model.User, ip string) (string, error) {
 
 	// 保存到 redis
 	sessionKey := fmt.Sprintf("users/%d", user.Id)
-	if _, err = h.redis.Set(context.Background(), sessionKey, tokenString, 0).Result(); err != nil {
+	sessionTTL := time.Duration(h.App.Config.Session.MaxAge) * time.Second
+	if _, err = h.redis.Set(context.Background(), sessionKey, tokenString, sessionTTL).Result(); err != nil {
 		return "", fmt.Errorf("error with save token: %v", err)
 	}
 
@@ -551,7 +555,6 @@ func (h *UserHandler) UpdatePass(c *gin.Context) {
 	}
 
 	password := utils.GenPassword(data.OldPass, user.Salt)
-	logger.Debugf(user.Salt, ",", user.Password, ",", password, ",", data.OldPass)
 	if password != user.Password {
 		resp.ERROR(c, "原密码错误")
 		return
@@ -606,6 +609,10 @@ func (h *UserHandler) ResetPass(c *gin.Context) {
 		resp.ERROR(c, "验证码错误")
 		return
 	}
+		if len(data.Password) < 8 {
+			resp.ERROR(c, "密码长度不能少于8位")
+			return
+		}
 
 	password := utils.GenPassword(data.Password, user.Salt)
 	err = h.DB.Model(&user).UpdateColumn("password", password).Error

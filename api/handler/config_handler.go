@@ -35,9 +35,24 @@ func (h *ConfigHandler) RegisterRoutes() {
 	group.GET("license", h.License)
 }
 
+var publicConfigKeys = map[string]bool{
+	"system":  true,
+	"notice":  true,
+	"license": true,
+	"mj":      true,
+	"sd":      true,
+	"suno":    true,
+	"footer":  true,
+}
+
 // Get 获取指定的系统配置
 func (h *ConfigHandler) Get(c *gin.Context) {
 	key := c.Query("key")
+	if !publicConfigKeys[key] {
+		resp.ERROR(c, "无权访问该配置")
+		return
+	}
+
 	var config model.Config
 	res := h.DB.Where("name", key).First(&config)
 	if res.Error != nil {

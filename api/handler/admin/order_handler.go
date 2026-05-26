@@ -9,6 +9,7 @@ package admin
 
 import (
 	"geekai/core"
+	"geekai/core/middleware"
 	"geekai/core/types"
 	"geekai/handler"
 	"geekai/store/model"
@@ -32,9 +33,12 @@ func NewOrderHandler(app *core.AppServer, db *gorm.DB) *OrderHandler {
 // RegisterRoutes 注册路由
 func (h *OrderHandler) RegisterRoutes() {
 	group := h.App.Engine.Group("/api/admin/order/")
-	group.POST("list", h.List)
-	group.GET("remove", h.Remove)
-	group.GET("clear", h.Clear)
+	group.Use(middleware.AdminAuthMiddleware(h.App.Config.AdminSession.SecretKey, h.App.Redis))
+	{
+		group.POST("list", h.List)
+		group.GET("remove", h.Remove)
+		group.GET("clear", h.Clear)
+	}
 }
 
 func (h *OrderHandler) List(c *gin.Context) {
