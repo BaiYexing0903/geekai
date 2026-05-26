@@ -826,7 +826,8 @@ const sendSSERequest = async (message) => {
         // ElMessage.error('连接已断开，发生错误：' + err.message)
         const reply = chatData.value[chatData.value.length - 1]
         if (reply) {
-          reply['content'].text = `<div class="text-red-500 rounded-md">${err.message}</div>`
+          const escapedMsg = err.message ? err.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') : '未知错误'
+          reply['content'].text = `<div class="text-red-500 rounded-md">${escapedMsg}</div>`
         }
       },
       onclose() {

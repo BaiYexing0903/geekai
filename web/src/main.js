@@ -7,7 +7,7 @@
 
 import '@/assets/css/tailwind.css'
 import '@/assets/iconfont/iconfont.css'
-import { useThemeStore } from '@/store/theme'
+import { useSharedStore } from '@/store/sharedata'
 import 'animate.css/animate.min.css'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -76,13 +76,13 @@ import {
 } from 'vant'
 
 const pinia = createPinia()
-const themeStore = useThemeStore(pinia) // 使用 theme store
+const sharedStore = useSharedStore(pinia) // 使用 shared store
 
 // 设置初始主题
-document.documentElement.setAttribute('data-theme', themeStore.theme)
+document.documentElement.setAttribute('data-theme', sharedStore.theme)
 
 // 同时设置初始 dark 类
-if (themeStore.theme === 'dark') {
+if (sharedStore.theme === 'dark') {
   document.documentElement.classList.add('dark')
 } else {
   document.documentElement.classList.remove('dark')
