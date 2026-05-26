@@ -213,6 +213,7 @@ function handlePaste(e) {
   const files = Array.from(e.clipboardData?.files || [])
   if (files.length === 0) return
   e.preventDefault()
+  e.stopImmediatePropagation()
   uploadFiles(files)
 }
 
@@ -220,6 +221,7 @@ function handleWindowPaste(e) {
   if (!rootRef.value) return
   const activeElement = document.activeElement
   if (activeElement && ['INPUT', 'TEXTAREA'].includes(activeElement.tagName)) return
+  if (!props.multiple && props.maxCount === 1 && fileList.value.length > 0) return
   handlePaste(e)
 }
 
