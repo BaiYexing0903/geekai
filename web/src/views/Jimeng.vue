@@ -51,7 +51,7 @@
             <el-input
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="请输入图片描述，越详细越好"
               maxlength="2000"
               show-word-limit
@@ -110,7 +110,7 @@
             <el-input
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="描述你想要的图片效果"
               maxlength="2000"
               show-word-limit
@@ -153,7 +153,7 @@
             <el-input
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="描述你想要的编辑效果"
               maxlength="2000"
               show-word-limit
@@ -245,7 +245,7 @@
             <el-input
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="描述你想要的视频内容"
               maxlength="2000"
               show-word-limit
@@ -288,7 +288,7 @@
             <el-input
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 5 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="描述你想要的视频效果"
               maxlength="2000"
               show-word-limit

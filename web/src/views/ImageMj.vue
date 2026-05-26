@@ -218,7 +218,7 @@
                     <div class="param-line pt" style="position: relative">
                       <el-input
                         v-model="params.prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 3, maxRows: 20 }"
                         maxlength="1024"
                         show-word-limit
                         type="textarea"
@@ -245,7 +245,7 @@
                     <div class="param-line pt">
                       <el-input
                         v-model="params.neg_prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 2, maxRows: 10 }"
                         type="textarea"
                         ref="promptRef"
                         maxlength="2000"
@@ -332,7 +332,7 @@
                     <div class="param-line pt">
                       <el-input
                         v-model="params.prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 3, maxRows: 20 }"
                         type="textarea"
                         ref="promptRef"
                         placeholder="请在此输入绘画提示词，系统会自动翻译中文提示词，高手请直接输入英文提示词"
@@ -357,7 +357,7 @@
                     <div class="param-line pt">
                       <el-input
                         v-model="params.neg_prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 2, maxRows: 10 }"
                         type="textarea"
                         ref="promptRef"
                         placeholder="请在此输入你不希望出现在图片上的内容，系统会自动翻译中文提示词"
@@ -536,7 +536,7 @@
                     <div class="param-line pt">
                       <el-input
                         v-model="params.prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 3, maxRows: 20 }"
                         type="textarea"
                         ref="promptRef"
                         placeholder="请在此输入绘画提示词，系统会自动翻译中文提示词，高手请直接输入英文提示词"
@@ -562,7 +562,7 @@
                     <div class="param-line pt">
                       <el-input
                         v-model="params.neg_prompt"
-                        :autosize="{ minRows: 4, maxRows: 6 }"
+                        :autosize="{ minRows: 2, maxRows: 10 }"
                         type="textarea"
                         ref="promptRef"
                         placeholder="请在此输入你不希望出现在图片上的内容，系统会自动翻译中文提示词"

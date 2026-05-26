@@ -39,7 +39,7 @@
                 v-model="jimengStore.currentPrompt"
                 type="textarea"
                 placeholder="请输入图片描述，越详细越好"
-                :rows="4"
+                :autosize="{ minRows: 3, maxRows: 12 }"
                 maxlength="2000"
                 show-word-limit
               />
@@ -116,7 +116,7 @@
                 v-model="jimengStore.currentPrompt"
                 type="textarea"
                 placeholder="描述你想要的编辑效果"
-                :rows="4"
+                :autosize="{ minRows: 3, maxRows: 12 }"
                 maxlength="2000"
                 show-word-limit
               />
@@ -214,7 +214,7 @@
                 v-model="jimengStore.currentPrompt"
                 type="textarea"
                 placeholder="请输入你想要的视频效果"
-                :rows="4"
+                :autosize="{ minRows: 3, maxRows: 12 }"
                 maxlength="2000"
                 show-word-limit
               />

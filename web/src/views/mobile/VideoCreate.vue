@@ -49,11 +49,11 @@
         <!-- 提示词输入 -->
         <div class="bg-white rounded-xl p-4 shadow-sm">
           <label class="block text-gray-700 font-medium mb-3">提示词</label>
-          <textarea
+          <el-input
             v-model="video.lumaParams.prompt"
             placeholder="请在此输入视频提示词，用逗号分割"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows="4"
+            type="textarea"
+            :autosize="{ minRows: 3, maxRows: 12 }"
             maxlength="2000"
           />
           <div class="flex justify-between">
@@ -381,11 +381,11 @@
         <!-- 提示词输入 -->
         <div class="bg-white rounded-xl p-4 shadow-sm">
           <label class="block text-gray-700 font-medium mb-3">提示词</label>
-          <textarea
+          <el-input
             v-model="video.kelingParams.prompt"
             :placeholder="video.kelingUseImageMode ? '描述视频画面细节' : '请在此输入视频提示词'"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows="4"
+            type="textarea"
+            :autosize="{ minRows: 3, maxRows: 12 }"
             maxlength="500"
           />
           <div class="flex justify-between">
@@ -405,11 +405,11 @@
         <!-- 排除内容 -->
         <div class="bg-white rounded-xl p-4 shadow-sm">
           <label class="block text-gray-700 font-medium mb-3">不希望出现的内容</label>
-          <textarea
+          <el-input
             v-model="video.kelingParams.negative_prompt"
             placeholder="请在此输入你不希望出现在视频上的内容"
-            class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            rows="3"
+            type="textarea"
+            :autosize="{ minRows: 2, maxRows: 8 }"
             maxlength="500"
           />
           <div class="text-right mt-2">

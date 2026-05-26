@@ -16,7 +16,7 @@
                 v-model="store.lumaParams.prompt"
                 type="textarea"
                 maxlength="2000"
-                :autosize="{ minRows: 4, maxRows: 6 }"
+                :autosize="{ minRows: 3, maxRows: 20 }"
                 placeholder="请在此输入视频提示词，用逗号分割，您也可以点击下面的提示词助手生成视频提示词"
               />
             </div>
@@ -397,7 +397,7 @@
                 v-model="store.kelingParams.prompt"
                 type="textarea"
                 maxlength="500"
-                :autosize="{ minRows: 4, maxRows: 6 }"
+                :autosize="{ minRows: 3, maxRows: 20 }"
                 :placeholder="
                   store.kelingUseImageMode
                     ? '描述视频画面细节'
@@ -432,7 +432,7 @@
               <el-input
                 v-model="store.kelingParams.negative_prompt"
                 type="textarea"
-                :autosize="{ minRows: 4, maxRows: 6 }"
+                :autosize="{ minRows: 2, maxRows: 10 }"
                 placeholder="请在此输入你不希望出现在视频上的内容"
               />
             </div>

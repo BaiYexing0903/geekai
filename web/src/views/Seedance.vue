@@ -43,7 +43,7 @@
               ref="promptInputRef"
               v-model="store.currentPrompt"
               type="textarea"
-              :autosize="{ minRows: 3, maxRows: 6 }"
+              :autosize="{ minRows: 3, maxRows: 20 }"
               placeholder="描述你想生成的视频画面..."
               maxlength="1000"
               show-word-limit

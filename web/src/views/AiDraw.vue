@@ -97,7 +97,7 @@
               <div class="param-line">
                 <el-input
                   v-model="params.prompt"
-                  :autosize="{ minRows: 4, maxRows: 6 }"
+                  :autosize="{ minRows: 3, maxRows: 20 }"
                   type="textarea"
                   ref="promptRef"
                   maxlength="4096"
