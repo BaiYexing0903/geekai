@@ -24,12 +24,18 @@ import (
 
 // RandString generate rand string with specified length
 func RandString(length int) string {
-	str := "0123456789abcdefghijklmnopqrstuvwxyz"
-	data := []byte(str)
-	var result []byte
-	r := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+	const charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	result := make([]byte, length)
+	randomBytes := make([]byte, length)
+	if _, err := rand.Read(randomBytes); err != nil {
+		r := rand2.New(rand2.NewSource(time.Now().UnixNano()))
+		for i := 0; i < length; i++ {
+			result[i] = charset[r.Intn(len(charset))]
+		}
+		return string(result)
+	}
 	for i := 0; i < length; i++ {
-		result = append(result, data[r.Intn(len(data))])
+		result[i] = charset[int(randomBytes[i])%len(charset)]
 	}
 	return string(result)
 }
@@ -38,8 +44,16 @@ func RandomNumber(bit int) int {
 	minNum := intPow(10, bit-1)
 	maxNum := intPow(10, bit) - 1
 
-	rand2.NewSource(time.Now().UnixNano())
-	return rand2.Intn(maxNum-minNum+1) + minNum
+	n := make([]byte, 4)
+	if _, err := rand.Read(n); err != nil {
+		rand2.NewSource(time.Now().UnixNano())
+		return rand2.Intn(maxNum-minNum+1) + minNum
+	}
+	v := int(uint(n[0])<<24 | uint(n[1])<<16 | uint(n[2])<<8 | uint(n[3]))
+	if v < 0 {
+		v = -v
+	}
+	return v%(maxNum-minNum+1) + minNum
 }
 
 func intPow(x, y int) int {

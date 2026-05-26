@@ -326,7 +326,7 @@ func (h *UserHandler) createNewUser(user model.User, inviteCode string) (model.U
 		user.Platform = "wechat"
 		user.Nickname = fmt.Sprintf("微信用户@%d", utils.RandomNumber(6))
 		user.Username = fmt.Sprintf("wx@%d", utils.RandomNumber(8))
-		user.Password = "geekai123"
+		user.Password = utils.RandString(16)
 	} else {
 		user.Nickname = fmt.Sprintf("用户@%d", utils.RandomNumber(6))
 		if user.Username == "" || user.Password == "" {

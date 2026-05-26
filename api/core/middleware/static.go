@@ -7,6 +7,7 @@ import (
 	"image/jpeg"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -33,6 +34,19 @@ func StaticMiddleware() gin.HandlerFunc {
 
 			// 打开图片文件
 			filePath := strings.TrimLeft(c.Request.URL.Path, "/")
+			absPath, err := filepath.Abs(filePath)
+			if err != nil {
+				c.String(http.StatusInternalServerError, "invalid path")
+				c.Abort()
+				return
+			}
+			wd, _ := os.Getwd()
+			staticDir := filepath.Join(wd, "static")
+			if !strings.HasPrefix(absPath, staticDir) {
+				c.String(http.StatusForbidden, "access denied")
+				c.Abort()
+				return
+			}
 			file, err := os.Open(filePath)
 			if err != nil {
 				c.String(http.StatusNotFound, "Image not found")

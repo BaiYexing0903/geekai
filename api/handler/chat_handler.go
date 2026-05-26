@@ -473,8 +473,11 @@ func getTotalTokens(req types.ApiRequest) int {
 func (h *ChatHandler) StopGenerate(c *gin.Context) {
 	sessionId := c.Query("session_id")
 	if h.ReqCancelFunc.Has(sessionId) {
-		h.ReqCancelFunc.Get(sessionId)()
+		fn := h.ReqCancelFunc.Get(sessionId)
 		h.ReqCancelFunc.Delete(sessionId)
+		if fn != nil {
+			fn()
+		}
 	}
 	resp.SUCCESS(c, types.OkMsg)
 }
