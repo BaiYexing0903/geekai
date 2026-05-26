@@ -86,6 +86,7 @@ func (s *Service) consumeTasks() {
 func (s *Service) processNextTask() {
 	var jobId uint
 	if err := s.taskQueue.LPop(&jobId); err != nil {
+		// 队列为空，等待1秒后重试
 		time.Sleep(time.Second)
 		return
 	}
@@ -102,13 +103,16 @@ func (s *Service) processNextTask() {
 
 // CreateTask 创建任务
 func (s *Service) CreateTask(userId uint, req *CreateTaskRequest) (*model.JimengJob, error) {
+	// 生成任务ID
 	taskId := utils.RandString(20)
 
+	// 序列化任务参数
 	paramsJson, err := json.Marshal(req.Params)
 	if err != nil {
 		return nil, fmt.Errorf("marshal task params failed: %w", err)
 	}
 
+	// 创建任务记录
 	job := &model.JimengJob{
 		UserId:     userId,
 		TaskId:     taskId,
@@ -122,10 +126,12 @@ func (s *Service) CreateTask(userId uint, req *CreateTaskRequest) (*model.Jimeng
 		UpdatedAt:  time.Now(),
 	}
 
+	// 保存到数据库
 	if err := s.db.Create(job).Error; err != nil {
 		return nil, fmt.Errorf("create jimeng job failed: %w", err)
 	}
 
+	// 推送到任务队列
 	if err := s.taskQueue.RPush(job.Id); err != nil {
 		return nil, fmt.Errorf("push jimeng task to queue failed: %w", err)
 	}
@@ -135,15 +141,18 @@ func (s *Service) CreateTask(userId uint, req *CreateTaskRequest) (*model.Jimeng
 
 // ProcessTask 处理任务
 func (s *Service) ProcessTask(jobId uint) error {
+	// 获取任务记录
 	var job model.JimengJob
 	if err := s.db.First(&job, jobId).Error; err != nil {
 		return fmt.Errorf("get jimeng job failed: %w", err)
 	}
 
+	// 更新任务状态为处理中
 	if err := s.UpdateJobStatus(job.Id, model.JMTaskStatusGenerating, ""); err != nil {
 		return fmt.Errorf("update job status failed: %w", err)
 	}
 
+	// 构建请求并提交任务
 	req, err := s.buildTaskRequest(&job)
 	if err != nil {
 		return s.handleTaskError(job.Id, fmt.Sprintf("build task request failed: %v", err))
@@ -151,41 +160,20 @@ func (s *Service) ProcessTask(jobId uint) error {
 
 	logger.Infof("提交即梦任务: %+v", req)
 
-	var taskId string
-	var rawData []byte
-
-	if job.Type == model.JMTaskTypeJimengV4T2i || job.Type == model.JMTaskTypeJimengV4I2i {
-		v4Req := &V4CreateRequest{
-			ReqKey:      req.ReqKey,
-			Prompt:      req.Prompt,
-			Width:       req.Width,
-			Height:      req.Height,
-			Scale:       req.Scale,
-			ForceSingle: true,
-		}
-		resp, err := s.client.SubmitV4Task(v4Req)
-		if err != nil {
-			return s.handleTaskError(job.Id, fmt.Sprintf("submit v4 task failed: %v", err))
-		}
-		if resp.Code != 10000 {
-			return s.handleTaskError(job.Id, fmt.Sprintf("submit v4 task failed: %s", mapV4ErrorMessage(resp.Code, resp.Message)))
-		}
-		taskId = resp.Data.TaskId
-		rawData, _ = json.Marshal(resp)
-	} else {
-		resp, err := s.client.SubmitTask(req)
-		if err != nil {
-			return s.handleTaskError(job.Id, fmt.Sprintf("submit task failed: %v", err))
-		}
-		if resp.Code != 10000 {
-			return s.handleTaskError(job.Id, fmt.Sprintf("submit task failed: %s", resp.Message))
-		}
-		taskId = resp.Data.TaskId
-		rawData, _ = json.Marshal(resp)
+	// 提交异步任务
+	resp, err := s.client.SubmitTask(req)
+	if err != nil {
+		return s.handleTaskError(job.Id, fmt.Sprintf("submit task failed: %v", err))
 	}
 
+	if resp.Code != 10000 {
+		return s.handleTaskError(job.Id, fmt.Sprintf("submit task failed: %s", resp.Message))
+	}
+
+	// 更新任务ID和原始数据
+	rawData, _ := json.Marshal(resp)
 	if err := s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Updates(map[string]any{
-		"task_id":    taskId,
+		"task_id":    resp.Data.TaskId,
 		"raw_data":   string(rawData),
 		"updated_at": time.Now(),
 	}).Error; err != nil {
@@ -197,23 +185,22 @@ func (s *Service) ProcessTask(jobId uint) error {
 
 // buildTaskRequest 构建任务请求（统一的参数解析）
 func (s *Service) buildTaskRequest(job *model.JimengJob) (*SubmitTaskRequest, error) {
+	// 解析任务参数
 	var params map[string]any
 	if err := json.Unmarshal([]byte(job.TaskParams), &params); err != nil {
 		return nil, fmt.Errorf("parse task params failed: %w", err)
 	}
 
+	// 构建基础请求
 	req := &SubmitTaskRequest{
 		ReqKey: job.ReqKey,
 		Prompt: job.Prompt,
 	}
 
+	// 根据任务类型设置特定参数
 	switch job.Type {
 	case model.JMTaskTypeTextToImage:
 		s.setTextToImageParams(req, params)
-	case model.JMTaskTypeJimengV4T2i:
-		s.setJimengV4T2iParams(req, params)
-	case model.JMTaskTypeJimengV4I2i:
-		s.setJimengV4I2iParams(req, params)
 	case model.JMTaskTypeImageToImage:
 		s.setImageToImageParams(req, params)
 	case model.JMTaskTypeImageEdit:
@@ -283,7 +270,7 @@ func (s *Service) setImageToImageParams(req *SubmitTaskRequest, params map[strin
 	if genMode, ok := params["gen_mode"].(string); ok {
 		req.GenMode = genMode
 	}
-	s.setCommonParams(req, params)
+	s.setCommonParams(req, params) // 复用通用参数
 }
 
 // setImageEditParams 设置图像编辑参数
@@ -340,53 +327,10 @@ func (s *Service) setTextToVideoParams(req *SubmitTaskRequest, params map[string
 
 // setImageToVideoParams 设置图生视频参数
 func (s *Service) setImageToVideoParams(req *SubmitTaskRequest, params map[string]any) {
-	s.setImageEditParams(req, params)
+	s.setImageEditParams(req, params) // 复用图像编辑的参数设置
 	if aspectRatio, ok := params["aspect_ratio"].(string); ok {
 		req.AspectRatio = aspectRatio
 	}
-}
-
-// setJimengV4T2iParams 设置即梦4.0文生图参数
-func (s *Service) setJimengV4T2iParams(req *SubmitTaskRequest, params map[string]any) {
-	if width, ok := params["width"]; ok {
-		if widthVal, ok := width.(float64); ok {
-			req.Width = int(widthVal)
-		}
-	}
-	if height, ok := params["height"]; ok {
-		if heightVal, ok := height.(float64); ok {
-			req.Height = int(heightVal)
-		}
-	}
-	if scale, ok := params["scale"]; ok {
-		if scaleVal, ok := scale.(float64); ok {
-			req.Scale = scaleVal
-		}
-	}
-	req.ForceSingle = true
-}
-
-// setJimengV4I2iParams 设置即梦4.0图生图参数
-func (s *Service) setJimengV4I2iParams(req *SubmitTaskRequest, params map[string]any) {
-	if imageUrls, ok := params["image_urls"].([]string); ok {
-		req.ImageUrls = append(req.ImageUrls, imageUrls...)
-	}
-	if width, ok := params["width"]; ok {
-		if widthVal, ok := width.(float64); ok {
-			req.Width = int(widthVal)
-		}
-	}
-	if height, ok := params["height"]; ok {
-		if heightVal, ok := height.(float64); ok {
-			req.Height = int(heightVal)
-		}
-	}
-	if scale, ok := params["scale"]; ok {
-		if scaleVal, ok := scale.(float64); ok {
-			req.Scale = scaleVal
-		}
-	}
-	req.ForceSingle = true
 }
 
 // setCommonParams 设置通用参数（seed, width, height等）
@@ -410,6 +354,7 @@ func (s *Service) setCommonParams(req *SubmitTaskRequest, params map[string]any)
 
 // pollTaskStatus 轮询任务状态
 func (s *Service) pollTaskStatus() {
+
 	for {
 		var jobs []model.JimengJob
 		s.db.Where("status IN (?)", []model.JMTaskStatus{model.JMTaskStatusGenerating, model.JMTaskStatusInQueue}).Find(&jobs)
@@ -420,155 +365,86 @@ func (s *Service) pollTaskStatus() {
 		}
 
 		for _, job := range jobs {
+			// 任务超时处理
 			if job.UpdatedAt.Before(time.Now().Add(-10 * time.Minute)) {
 				s.handleTaskError(job.Id, "task timeout")
 				continue
 			}
 
-			if job.Type == model.JMTaskTypeJimengV4T2i || job.Type == model.JMTaskTypeJimengV4I2i {
-				s.pollV4Task(job)
-			} else {
-				s.pollSdkTask(job)
+			// 查询任务状态
+			resp, err := s.client.QueryTask(&QueryTaskRequest{
+				ReqKey:  job.ReqKey,
+				TaskId:  job.TaskId,
+				ReqJson: `{"return_url":true}`,
+			})
+
+			if err != nil {
+				s.handleTaskError(job.Id, fmt.Sprintf("query task failed: %s", err.Error()))
+				continue
 			}
+
+			// 更新原始数据
+			rawData, _ := json.Marshal(resp)
+			s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Update("raw_data", string(rawData))
+
+			if resp.Code != 10000 {
+				s.handleTaskError(job.Id, fmt.Sprintf("query task failed: %s", resp.Message))
+				continue
+			}
+
+			switch resp.Data.Status {
+			case model.JMTaskStatusDone:
+				// 判断任务是否成功
+				if resp.Message != "Success" {
+					s.handleTaskError(job.Id, fmt.Sprintf("task failed: %s", resp.Data.AlgorithmBaseResp.StatusMessage))
+					continue
+				}
+
+				// 任务完成，更新结果
+				updates := map[string]any{
+					"status":     model.JMTaskStatusSuccess,
+					"updated_at": time.Now(),
+				}
+
+				// 设置结果URL
+				if len(resp.Data.ImageUrls) > 0 {
+					imgUrl, err := s.uploader.GetUploadHandler().PutUrlFile(resp.Data.ImageUrls[0], ".png", false)
+					if err != nil {
+						logger.Errorf("upload image failed: %v", err)
+						imgUrl = resp.Data.ImageUrls[0]
+					}
+					updates["img_url"] = imgUrl
+				}
+				if resp.Data.VideoUrl != "" {
+					videoUrl, err := s.uploader.GetUploadHandler().PutUrlFile(resp.Data.VideoUrl, ".mp4", false)
+					if err != nil {
+						logger.Errorf("upload video failed: %v", err)
+						videoUrl = resp.Data.VideoUrl
+					}
+					updates["video_url"] = videoUrl
+				}
+
+				s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Updates(updates)
+			case model.JMTaskStatusInQueue, model.JMTaskStatusGenerating:
+				// 任务处理中
+				s.UpdateJobStatus(job.Id, model.JMTaskStatusGenerating, "")
+
+			case model.JMTaskStatusNotFound:
+				// 任务未找到
+				s.handleTaskError(job.Id, "task not found")
+
+			case model.JMTaskStatusExpired:
+				continue
+			default:
+				logger.Warnf("unknown task status: %s", resp.Data.Status)
+			}
+
 		}
 
 		time.Sleep(5 * time.Second)
-	}
-}
 
-// pollSdkTask 轮询SDK任务状态
-func (s *Service) pollSdkTask(job model.JimengJob) {
-	resp, err := s.client.QueryTask(&QueryTaskRequest{
-		ReqKey:  job.ReqKey,
-		TaskId:  job.TaskId,
-		ReqJson: `{"return_url":true}`,
-	})
-	if err != nil {
-		s.handleTaskError(job.Id, fmt.Sprintf("query task failed: %s", err.Error()))
-		return
 	}
 
-	rawData, _ := json.Marshal(resp)
-	s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Update("raw_data", string(rawData))
-
-	if resp.Code != 10000 {
-		s.handleTaskError(job.Id, fmt.Sprintf("query task failed: %s", resp.Message))
-		return
-	}
-
-	switch resp.Data.Status {
-	case model.JMTaskStatusDone:
-		if resp.Message != "Success" {
-			s.handleTaskError(job.Id, fmt.Sprintf("task failed: %s", resp.Data.AlgorithmBaseResp.StatusMessage))
-			return
-		}
-		updates := map[string]any{
-			"status":     model.JMTaskStatusSuccess,
-			"updated_at": time.Now(),
-		}
-		if len(resp.Data.ImageUrls) > 0 {
-			imgUrl, err := s.uploader.GetUploadHandler().PutUrlFile(resp.Data.ImageUrls[0], ".png", false)
-			if err != nil {
-				logger.Errorf("upload image failed: %v", err)
-				imgUrl = resp.Data.ImageUrls[0]
-			}
-			updates["img_url"] = imgUrl
-		}
-		if resp.Data.VideoUrl != "" {
-			videoUrl, err := s.uploader.GetUploadHandler().PutUrlFile(resp.Data.VideoUrl, ".mp4", false)
-			if err != nil {
-				logger.Errorf("upload video failed: %v", err)
-				videoUrl = resp.Data.VideoUrl
-			}
-			updates["video_url"] = videoUrl
-		}
-		s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Updates(updates)
-	case model.JMTaskStatusInQueue, model.JMTaskStatusGenerating:
-		s.UpdateJobStatus(job.Id, model.JMTaskStatusGenerating, "")
-	case model.JMTaskStatusNotFound:
-		s.handleTaskError(job.Id, "task not found")
-	case model.JMTaskStatusExpired:
-		// skip
-	default:
-		logger.Warnf("unknown task status: %s", resp.Data.Status)
-	}
-}
-
-// pollV4Task 轮询即梦4.0任务状态
-func (s *Service) pollV4Task(job model.JimengJob) {
-	resp, err := s.client.QueryV4Task(&V4QueryRequest{
-		ReqKey:  job.ReqKey,
-		TaskId:  job.TaskId,
-		ReqJson: `{"return_url":true}`,
-	})
-	if err != nil {
-		s.handleTaskError(job.Id, fmt.Sprintf("query v4 task failed: %s", err.Error()))
-		return
-	}
-
-	rawData, _ := json.Marshal(resp)
-	s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Update("raw_data", string(rawData))
-
-	if resp.Code != 10000 {
-		errMsg := mapV4ErrorMessage(resp.Code, resp.Message)
-		s.handleTaskError(job.Id, fmt.Sprintf("query v4 task failed: %s", errMsg))
-		return
-	}
-
-	switch resp.Data.Status {
-	case model.JMTaskStatusDone:
-		updates := map[string]any{
-			"status":     model.JMTaskStatusSuccess,
-			"updated_at": time.Now(),
-		}
-		if len(resp.Data.ImageUrls) > 0 {
-			imgUrl, err := s.uploader.GetUploadHandler().PutUrlFile(resp.Data.ImageUrls[0], ".png", false)
-			if err != nil {
-				logger.Errorf("upload v4 image failed: %v", err)
-				imgUrl = resp.Data.ImageUrls[0]
-			}
-			updates["img_url"] = imgUrl
-		}
-		s.db.Model(&model.JimengJob{}).Where("id = ?", job.Id).Updates(updates)
-	case model.JMTaskStatusInQueue, model.JMTaskStatusGenerating:
-		s.UpdateJobStatus(job.Id, model.JMTaskStatusGenerating, "")
-	case model.JMTaskStatusNotFound:
-		s.handleTaskError(job.Id, "task not found")
-	case model.JMTaskStatusExpired:
-		// skip
-	default:
-		logger.Warnf("unknown v4 task status: %s", resp.Data.Status)
-	}
-}
-
-// mapV4ErrorMessage 映射即梦4.0错误码为中文错误信息
-func mapV4ErrorMessage(code int, msg string) string {
-	switch code {
-	case 50411:
-		return "输入图片审核未通过"
-	case 50511:
-		return "输出图片审核未通过，请重试"
-	case 50412:
-		return "输入文本审核未通过"
-	case 50512:
-		return "输出文本审核未通过"
-	case 50413:
-		return "输入文本包含敏感词或版权词"
-	case 50518:
-		return "输入版权图审核未通过"
-	case 50519:
-		return "输出版权图审核未通过，请重试"
-	case 50520, 50521, 50522:
-		return "审核服务异常"
-	case 50429:
-		return "请求过于频繁，请稍后重试"
-	case 50430:
-		return "并发请求超限，请稍后重试"
-	case 50500, 50501:
-		return "服务内部错误"
-	default:
-		return msg
-	}
 }
 
 // UpdateJobStatus 更新任务状态

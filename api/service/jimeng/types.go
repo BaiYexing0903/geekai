@@ -10,7 +10,6 @@ const (
 	ReqKeyImageEffects         = "i2i_multi_style_zx2x"       // 图像特效
 	ReqKeyTextToVideo          = "jimeng_vgfm_t2v_l20"        // 文生视频
 	ReqKeyImageToVideo         = "jimeng_vgfm_i2v_l20"        // 图生视频
-	ReqKeyJimengV4T2i          = "jimeng_t2i_v40"             // 即梦4.0文生图
 )
 
 // SubmitTaskRequest 提交任务请求
@@ -23,7 +22,6 @@ type SubmitTaskRequest struct {
 	Width     int     `json:"width,omitempty"`
 	Height    int     `json:"height,omitempty"`
 	UsePreLLM bool    `json:"use_pre_llm,omitempty"`
-	ForceSingle bool  `json:"force_single,omitempty"`
 	// 图生图参数
 	ImageInput       string   `json:"image_input,omitempty"`
 	ImageUrls        []string `json:"image_urls,omitempty"`
@@ -38,50 +36,6 @@ type SubmitTaskRequest struct {
 	TemplateId  string `json:"template_id,omitempty"`
 	// 视频生成参数
 	AspectRatio string `json:"aspect_ratio,omitempty"`
-}
-
-// V4CreateRequest 即梦4.0创建任务请求
-type V4CreateRequest struct {
-	ReqKey      string   `json:"req_key"`
-	Prompt      string   `json:"prompt"`
-	ImageUrls   []string `json:"image_urls,omitempty"`
-	Width       int      `json:"width,omitempty"`
-	Height      int      `json:"height,omitempty"`
-	Scale       float64  `json:"scale,omitempty"`
-	ForceSingle bool     `json:"force_single"`
-}
-
-// V4CreateResponse 即梦4.0创建任务响应
-type V4CreateResponse struct {
-	Code        int    `json:"code"`
-	Message     string `json:"message"`
-	RequestId   string `json:"request_id"`
-	Status      int    `json:"status"`
-	TimeElapsed string `json:"time_elapsed"`
-	Data        struct {
-		TaskId string `json:"task_id"`
-	} `json:"data"`
-}
-
-// V4QueryRequest 即梦4.0查询任务请求
-type V4QueryRequest struct {
-	ReqKey  string `json:"req_key"`
-	TaskId  string `json:"task_id"`
-	ReqJson string `json:"req_json,omitempty"`
-}
-
-// V4QueryResponse 即梦4.0查询任务响应
-type V4QueryResponse struct {
-	Code        int    `json:"code"`
-	Message     string `json:"message"`
-	RequestId   string `json:"request_id"`
-	Status      int    `json:"status"`
-	TimeElapsed string `json:"time_elapsed"`
-	Data        struct {
-		Status           model.JMTaskStatus `json:"status"`
-		BinaryDataBase64 []string           `json:"binary_data_base64"`
-		ImageUrls        []string           `json:"image_urls"`
-	} `json:"data"`
 }
 
 // SubmitTaskResponse 提交任务响应

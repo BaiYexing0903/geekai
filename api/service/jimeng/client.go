@@ -1,11 +1,9 @@
 package jimeng
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"geekai/core/types"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -166,86 +164,6 @@ func (c *Client) SubmitSyncTask(req *SubmitTaskRequest) (*QueryTaskResponse, err
 
 	// 解析响应，同步任务直接返回结果
 	var result QueryTaskResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("unmarshal response failed: %w", err)
-	}
-
-	return &result, nil
-}
-
-// SubmitV4Task 提交即梦4.0异步任务（REST API）
-func (c *Client) SubmitV4Task(req *V4CreateRequest) (*V4CreateResponse, error) {
-	if c.config.ApiUrl == "" || c.config.BearerToken == "" {
-		return nil, fmt.Errorf("即梦4.0 API未配置，请在后台设置API地址和Bearer Token")
-	}
-
-	jsonBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("marshal request failed: %w", err)
-	}
-
-	apiUrl := strings.TrimRight(c.config.ApiUrl, "/") + "/api/v1/dream/create"
-	httpReq, err := http.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("create request failed: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.config.BearerToken)
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("submit v4 task failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response failed: %w", err)
-	}
-
-	logger.Infof("Jimeng V4 SubmitTask Response: %s", string(respBody))
-
-	var result V4CreateResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return nil, fmt.Errorf("unmarshal response failed: %w", err)
-	}
-
-	return &result, nil
-}
-
-// QueryV4Task 查询即梦4.0任务结果（REST API）
-func (c *Client) QueryV4Task(req *V4QueryRequest) (*V4QueryResponse, error) {
-	if c.config.ApiUrl == "" || c.config.BearerToken == "" {
-		return nil, fmt.Errorf("即梦4.0 API未配置")
-	}
-
-	jsonBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("marshal request failed: %w", err)
-	}
-
-	apiUrl := strings.TrimRight(c.config.ApiUrl, "/") + "/api/v1/dream/get_result"
-	httpReq, err := http.NewRequest(http.MethodPost, apiUrl, bytes.NewReader(jsonBody))
-	if err != nil {
-		return nil, fmt.Errorf("create request failed: %w", err)
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.config.BearerToken)
-
-	resp, err := http.DefaultClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("query v4 task failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read response failed: %w", err)
-	}
-
-	logger.Infof("Jimeng V4 QueryTask Response: %s", string(respBody))
-
-	var result V4QueryResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal response failed: %w", err)
 	}

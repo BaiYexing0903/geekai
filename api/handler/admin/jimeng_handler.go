@@ -230,23 +230,9 @@ func (h *AdminJimengHandler) UpdateConfig(c *gin.Context) {
 		return
 	}
 
-	// 验证即梦4.0 API配置
-	if (req.ApiUrl != "" || req.BearerToken != "") && (req.ApiUrl == "" || req.BearerToken == "") {
-		resp.ERROR(c, "即梦4.0 API地址和Bearer Token必须同时填写")
-		return
-	}
-
 	// 验证算力配置
 	if req.Power.TextToImage <= 0 {
 		resp.ERROR(c, "文生图算力必须大于0")
-		return
-	}
-	if req.Power.JimengV4T2i <= 0 {
-		resp.ERROR(c, "即梦4.0文生图算力必须大于0")
-		return
-	}
-	if req.Power.JimengV4I2i <= 0 {
-		resp.ERROR(c, "即梦4.0图生图算力必须大于0")
 		return
 	}
 	if req.Power.ImageToImage <= 0 {

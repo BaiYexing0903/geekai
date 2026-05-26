@@ -47,8 +47,6 @@ const (
 	JMTaskTypeImageEffects = JMTaskType("image_effects")  // 图像特效
 	JMTaskTypeTextToVideo  = JMTaskType("text_to_video")  // 文生视频
 	JMTaskTypeImageToVideo = JMTaskType("image_to_video") // 图生视频
-	JMTaskTypeJimengV4T2i  = JMTaskType("jimeng_v4_t2i")  // 即梦4.0文生图
-	JMTaskTypeJimengV4I2i  = JMTaskType("jimeng_v4_i2i")  // 即梦4.0图生图
 )
 
 // TableName 返回数据表名称

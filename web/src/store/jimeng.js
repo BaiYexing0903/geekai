@@ -66,22 +66,6 @@ export const useJimengStore = defineStore('jimeng', () => {
       power: 20,
     },
     {
-      key: 'jimeng_v4_t2i',
-      name: '即梦4.0文生图',
-      category: 'image_generation',
-      needsPrompt: true,
-      needsImage: false,
-      power: 30,
-    },
-    {
-      key: 'jimeng_v4_i2i',
-      name: '即梦4.0图生图',
-      category: 'image_generation',
-      needsPrompt: true,
-      needsImage: true,
-      power: 30,
-    },
-    {
       key: 'image_to_image',
       name: '图生图',
       category: 'image_generation',
@@ -140,16 +124,6 @@ export const useJimengStore = defineStore('jimeng', () => {
     scale: 2.5,
     seed: -1,
     use_pre_llm: true,
-  })
-
-  const jimengV4T2iParams = reactive({
-    size: '2048x2048',
-    scale: 0.5,
-  })
-
-  const jimengV4I2iParams = reactive({
-    image_input: '',
-    scale: 0.5,
   })
 
   const imageToImageParams = reactive({
@@ -276,8 +250,6 @@ export const useJimengStore = defineStore('jimeng', () => {
   const getTaskType = (type) => {
     const typeMap = {
       text_to_image: 'primary',
-      jimeng_v4_t2i: 'primary',
-      jimeng_v4_i2i: 'primary',
       image_to_image: 'primary',
       image_edit: 'primary',
       image_effects: 'primary',
@@ -398,19 +370,6 @@ export const useJimengStore = defineStore('jimeng', () => {
             scale: textToImageParams.scale,
             seed: textToImageParams.seed,
             use_pre_llm: textToImageParams.use_pre_llm,
-          })
-          break
-        case 'jimeng_v4_t2i':
-          Object.assign(requestData, {
-            width: parseInt(jimengV4T2iParams.size.split('x')[0]),
-            height: parseInt(jimengV4T2iParams.size.split('x')[1]),
-            scale: jimengV4T2iParams.scale,
-          })
-          break
-        case 'jimeng_v4_i2i':
-          Object.assign(requestData, {
-            image_input: jimengV4I2iParams.image_input[0],
-            scale: jimengV4I2iParams.scale,
           })
           break
         case 'image_to_image':
@@ -571,8 +530,6 @@ export const useJimengStore = defineStore('jimeng', () => {
     // 参数
     currentPrompt,
     textToImageParams,
-    jimengV4T2iParams,
-    jimengV4I2iParams,
     imageToImageParams,
     imageEditParams,
     imageEffectsParams,
@@ -619,27 +576,6 @@ export const imageSizeOptions = [
   { label: '9:16 (936x1664)', value: '936x1664' },
   { label: '21:9 (2016x864)', value: '2016x864' },
   { label: '9:21 (864x2016)', value: '864x2016' },
-]
-
-export const jimengV4ImageSizeOptions = [
-  { label: '1:1 (2048x2048) 2K', value: '2048x2048' },
-  { label: '4:3 (2304x1728) 2K', value: '2304x1728' },
-  { label: '3:4 (1728x2304) 2K', value: '1728x2304' },
-  { label: '3:2 (2496x1664) 2K', value: '2496x1664' },
-  { label: '2:3 (1664x2496) 2K', value: '1664x2496' },
-  { label: '16:9 (2560x1440) 2K', value: '2560x1440' },
-  { label: '9:16 (1440x2560) 2K', value: '1440x2560' },
-  { label: '21:9 (3024x1296) 2K', value: '3024x1296' },
-  { label: '9:21 (1296x3024) 2K', value: '1296x3024' },
-  { label: '1:1 (4096x4096) 4K', value: '4096x4096' },
-  { label: '4:3 (4694x3520) 4K', value: '4694x3520' },
-  { label: '3:4 (3520x4694) 4K', value: '3520x4694' },
-  { label: '3:2 (4992x3328) 4K', value: '4992x3328' },
-  { label: '2:3 (3328x4992) 4K', value: '3328x4992' },
-  { label: '16:9 (5404x3040) 4K', value: '5404x3040' },
-  { label: '9:16 (3040x5404) 4K', value: '3040x5404' },
-  { label: '21:9 (6198x2656) 4K', value: '6198x2656' },
-  { label: '9:21 (2656x6198) 4K', value: '2656x6198' },
 ]
 
 export const videoAspectRatioOptions = [
