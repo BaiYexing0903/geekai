@@ -200,18 +200,18 @@ export function processContent(content) {
     }
   }
   // 处理推理标签
-  if (content.includes('<think>')) {
-    content = content.replace(/<think*>(.*?)<\/think>/gs, (match, text) => {
+  if (content.includes('<think')) {
+    content = content.replace(/<think(.*?)<\/think>/gs, (match, text) => {
       if (text.length > 10) {
         const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-        return `<blockquote>${escaped}</blockquote>`
+        return '\n' + escaped.split('\n').map(line => `> ${line}`).join('\n') + '\n'
       }
       return ''
     })
-    content = content.replace(/<think*>(.*?)$/gs, (match, text) => {
+    content = content.replace(/<think(.*?)$/gs, (match, text) => {
       if (text.length > 10) {
         const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-        return `<blockquote>${escaped}</blockquote>`
+        return '\n' + escaped.split('\n').map(line => `> ${line}`).join('\n') + '\n'
       }
       return ''
     })

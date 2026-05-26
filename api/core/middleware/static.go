@@ -42,7 +42,7 @@ func StaticMiddleware() gin.HandlerFunc {
 			}
 			wd, _ := os.Getwd()
 			staticDir := filepath.Join(wd, "static")
-			if !strings.HasPrefix(absPath, staticDir) {
+			if absPath != staticDir && !strings.HasPrefix(absPath, staticDir+string(filepath.Separator)) {
 				c.String(http.StatusForbidden, "access denied")
 				c.Abort()
 				return

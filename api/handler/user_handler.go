@@ -609,10 +609,10 @@ func (h *UserHandler) ResetPass(c *gin.Context) {
 		resp.ERROR(c, "验证码错误")
 		return
 	}
-		if len(data.Password) < 8 {
-			resp.ERROR(c, "密码长度不能少于8位")
-			return
-		}
+	if len(data.Password) < 8 {
+		resp.ERROR(c, "密码长度不能少于8位")
+		return
+	}
 
 	password := utils.GenPassword(data.Password, user.Salt)
 	err = h.DB.Model(&user).UpdateColumn("password", password).Error
