@@ -86,6 +86,7 @@ onMounted(() => {
 
   if (token.value) {
     setUserToken(token.value)
+    router.replace({ path: router.currentRoute.value.path, query: {} })
     handleRegisterSuccess()
   }
 })

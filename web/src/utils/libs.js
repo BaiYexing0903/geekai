@@ -201,20 +201,21 @@ export function processContent(content) {
   }
   // 处理推理标签
   if (content.includes('<think>')) {
-    content = content.replace(/<think>(.*?)<\/think>/gs, (match, content) => {
-      if (content.length > 10) {
-        return `<blockquote>${content}</blockquote>`
+    content = content.replace(/<think*>(.*?)<\/think>/gs, (match, text) => {
+      if (text.length > 10) {
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        return `<blockquote>${escaped}</blockquote>`
       }
       return ''
     })
-    content = content.replace(/<think>(.*?)$/gs, (match, content) => {
-      if (content.length > 10) {
-        return `<blockquote>${content}</blockquote>`
+    content = content.replace(/<think*>(.*?)$/gs, (match, text) => {
+      if (text.length > 10) {
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        return `<blockquote>${escaped}</blockquote>`
       }
       return ''
     })
   }
-
   // 支持 \[ 公式标签
   content = content.replace(/\\\[/g, '$$').replace(/\\\]/g, '$$')
   content = content.replace(/\\\(\\boxed\{(\d+)\}\\\)/g, '<span class="boxed">$1</span>')

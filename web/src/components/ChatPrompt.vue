@@ -115,7 +115,7 @@ import { onMounted, ref } from 'vue'
 
 const md = new MarkdownIt({
   breaks: true,
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
   highlight: function (str, lang) {

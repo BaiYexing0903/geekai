@@ -381,7 +381,7 @@ const playVideo = (item) => {
 
 const md = MarkdownIt({
   breaks: true,
-  html: true,
+  html: false,
   linkify: true,
 })
 

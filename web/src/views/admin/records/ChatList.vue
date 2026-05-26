@@ -320,7 +320,7 @@ const removeMessage = function (row) {
 
 const md = MarkdownIt({
   breaks: true,
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
   highlight: function (str, lang) {

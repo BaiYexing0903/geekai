@@ -161,7 +161,7 @@ const codeBlockStates = reactive({})
 
 const md = new MarkdownIt({
   breaks: true,
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
   highlight: function (str, lang) {

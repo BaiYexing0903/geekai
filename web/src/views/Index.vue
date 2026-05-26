@@ -118,7 +118,7 @@ const noticeKey = ref('SYSTEM_NOTICE')
 // Markdown 解析器
 const md = new MarkdownIt({
   breaks: true,
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
 }).use(emoji)

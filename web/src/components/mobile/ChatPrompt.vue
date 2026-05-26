@@ -5,7 +5,7 @@
     </div>
     <div class="flex justify-end">
       <div class="chat-item">
-        <div ref="contentRef" :data-clipboard-text="content" class="content" v-html="content"></div>
+        <div ref="contentRef" :data-clipboard-text="content" class="content">{{ content }}</div>
         <div class="triangle"></div>
       </div>
 
@@ -19,7 +19,7 @@
 <script setup>
 import Clipboard from 'clipboard'
 import { showNotify } from 'vant'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import MobileFileList from '@/components/mobile/MobileFileList.vue'
 
 // eslint-disable-next-line no-unused-vars,no-undef
