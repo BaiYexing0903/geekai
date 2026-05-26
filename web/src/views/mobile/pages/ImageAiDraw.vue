@@ -100,7 +100,7 @@
           @update:model-value="onPromptInput"
           @click="rememberPromptCursor"
         />
-        <div v-if="params.mode === 'image_to_image' && params.images.length > 0" class="mention-trigger">
+        <div v-if="params.mode === 'image_to_image'" class="mention-trigger">
           <van-button size="small" type="primary" plain round @click="toggleMentionPicker">@ 引用素材</van-button>
         </div>
 
@@ -222,7 +222,7 @@
     <van-popup v-model:show="showMentionPicker" round position="bottom">
       <div class="mention-sheet">
         <div class="mention-title">选择参考素材</div>
-        <div v-if="mentionOptions.length === 0" class="mention-empty">请先上传参考图</div>
+        <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
         <button
           v-for="option in mentionOptions"
           :key="option.label"

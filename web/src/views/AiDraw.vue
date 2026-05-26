@@ -110,14 +110,14 @@
                     @select="rememberPromptCursor"
                   />
                   <el-button
-                    v-if="params.mode === 'image_to_image' && params.images.length > 0"
+                    v-if="params.mode === 'image_to_image'"
                     class="mention-btn"
                     text
                     @mousedown.prevent.stop="toggleMentionPicker"
                     @click.prevent.stop
                   >@</el-button>
                   <div v-if="showMentionPicker" class="mention-menu" @mousedown.prevent.stop @click.stop>
-                    <div v-if="mentionOptions.length === 0" class="mention-empty">请先上传参考图</div>
+                    <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
                     <button
                       v-for="option in mentionOptions"
                       :key="option.label"
