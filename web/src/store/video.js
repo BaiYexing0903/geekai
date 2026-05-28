@@ -259,6 +259,14 @@ export const useVideoStore = defineStore('video', () => {
     ;[lumaParams.image, lumaParams.image_tail] = [lumaParams.image_tail, lumaParams.image]
   }
 
+  const selectLumaStartMaterial = (url) => {
+    lumaParams.image = replaceImg(url)
+  }
+
+  const selectLumaEndMaterial = (url) => {
+    lumaParams.image_tail = replaceImg(url)
+  }
+
   const toggleLumaImageMode = (enabled) => {
     lumaUseImageMode.value = enabled
     // 关闭时清空图片
@@ -369,6 +377,14 @@ export const useVideoStore = defineStore('video', () => {
 
   const switchKelingImages = () => {
     ;[kelingParams.image, kelingParams.image_tail] = [kelingParams.image_tail, kelingParams.image]
+  }
+
+  const selectKelingStartMaterial = (url) => {
+    kelingParams.image = replaceImg(url)
+  }
+
+  const selectKelingEndMaterial = (url) => {
+    kelingParams.image_tail = replaceImg(url)
   }
 
   const createKelingVideo = async () => {
@@ -574,6 +590,8 @@ export const useVideoStore = defineStore('video', () => {
     uploadLumaEndImage,
     removeLumaImage,
     switchLumaImages,
+    selectLumaStartMaterial,
+    selectLumaEndMaterial,
     createLumaVideo,
 
     // KeLing 方法
@@ -584,6 +602,8 @@ export const useVideoStore = defineStore('video', () => {
     uploadKelingEndImage,
     removeKelingImage,
     switchKelingImages,
+    selectKelingStartMaterial,
+    selectKelingEndMaterial,
     createKelingVideo,
 
     // 共同方法

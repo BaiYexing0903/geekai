@@ -19,14 +19,15 @@ import (
 	"geekai/service/aidraw"
 	"geekai/service/dalle"
 	"geekai/service/jimeng"
+	"geekai/service/material"
 	"geekai/service/mj"
 	"geekai/service/moderation"
 	"geekai/service/oss"
 	"geekai/service/payment"
 	"geekai/service/sd"
+	"geekai/service/seedance"
 	"geekai/service/sms"
 	"geekai/service/suno"
-	"geekai/service/seedance"
 	"geekai/service/video"
 	"geekai/store"
 	"io"
@@ -171,6 +172,8 @@ func main() {
 		// 邮件服务
 		fx.Provide(service.NewSmtpService),
 
+		// 素材记录服务
+		fx.Provide(material.NewService),
 
 		// Dalle 服务
 		fx.Provide(dalle.NewService),

@@ -93,6 +93,10 @@
       </div>
     </template>
 
+    <div class="material-picker-entry">
+      <MaterialPicker accept="image" @select="selectMaterial" />
+    </div>
+
     <!-- 上传进度 -->
     <el-progress
       v-if="uploading"
@@ -104,6 +108,7 @@
 </template>
 
 <script setup>
+import MaterialPicker from './MaterialPicker.vue'
 import { isImageFileTooLarge, normalizeImageModelValue } from './imageUploadUtils'
 import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
@@ -152,6 +157,25 @@ const imageList = computed({
 })
 
 const uploadCount = ref(1)
+
+const addImageUrl = (url) => {
+  const imageUrl = replaceImg(url)
+  if (props.multiple || props.maxCount > 1) {
+    if (imageList.value.length >= props.maxCount) {
+      ElMessage.warning(`最多只能上传 ${props.maxCount} 张图片`)
+      return
+    }
+    imageList.value = [...imageList.value, imageUrl]
+  } else {
+    imageList.value = [imageUrl]
+  }
+  emit('upload-success', imageUrl)
+}
+
+const selectMaterial = (url) => {
+  addImageUrl(url)
+}
+
 // 处理上传
 const handleUpload = async (uploadFile) => {
   const file = uploadFile.file
@@ -194,17 +218,7 @@ const handleUpload = async (uploadFile) => {
     clearInterval(progressTimer)
     uploadProgress.value = 100
 
-    const imageUrl = replaceImg(response.data.url)
-
-    // 更新图片列表
-    if (props.multiple || props.maxCount > 1) {
-      const newList = [...imageList.value, imageUrl]
-      imageList.value = newList
-    } else {
-      imageList.value = [imageUrl]
-    }
-
-    emit('upload-success', imageUrl)
+    addImageUrl(response.data.url)
     ElMessage.success('上传成功')
   } catch (error) {
     ElMessage.error('上传失败: ' + (error.message || '网络错误'))
@@ -342,6 +356,10 @@ const removeImage = (index) => {
   .uploader {
     width: 100%;
   }
+}
+
+.material-picker-entry {
+  margin-top: 8px;
 }
 
 .upload-progress {

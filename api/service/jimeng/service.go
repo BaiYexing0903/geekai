@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	logger2 "geekai/logger"
+	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -22,29 +23,31 @@ var logger = logger2.GetLogger()
 
 // Service 即梦服务（合并了消费者功能）
 type Service struct {
-	db        *gorm.DB
-	redis     *redis.Client
-	taskQueue *store.RedisQueue
-	client    *Client
-	ctx       context.Context
-	cancel    context.CancelFunc
-	running   bool
-	uploader  *oss.UploaderManager
+	db              *gorm.DB
+	redis           *redis.Client
+	taskQueue       *store.RedisQueue
+	client          *Client
+	ctx             context.Context
+	cancel          context.CancelFunc
+	running         bool
+	uploader        *oss.UploaderManager
+	materialService *material.Service
 }
 
 // NewService 创建即梦服务
-func NewService(db *gorm.DB, redisCli *redis.Client, uploader *oss.UploaderManager, client *Client) *Service {
+func NewService(db *gorm.DB, redisCli *redis.Client, uploader *oss.UploaderManager, client *Client, materialService *material.Service) *Service {
 	taskQueue := store.NewRedisQueue("JimengTaskQueue", redisCli)
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Service{
-		db:        db,
-		redis:     redisCli,
-		taskQueue: taskQueue,
-		client:    client,
-		ctx:       ctx,
-		cancel:    cancel,
-		running:   false,
-		uploader:  uploader,
+		db:              db,
+		redis:           redisCli,
+		taskQueue:       taskQueue,
+		client:          client,
+		ctx:             ctx,
+		cancel:          cancel,
+		running:         false,
+		uploader:        uploader,
+		materialService: materialService,
 	}
 }
 

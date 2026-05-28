@@ -15,6 +15,7 @@ import (
 	"geekai/core/types"
 	logger2 "geekai/logger"
 	"geekai/service"
+	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -34,20 +35,22 @@ import (
 var logger = logger2.GetLogger()
 
 type Service struct {
-	httpClient    *req.Client
-	db            *gorm.DB
-	uploadManager *oss.UploaderManager
-	taskQueue     *store.RedisQueue
-	userService   *service.UserService
+	httpClient      *req.Client
+	db              *gorm.DB
+	uploadManager   *oss.UploaderManager
+	taskQueue       *store.RedisQueue
+	userService     *service.UserService
+	materialService *material.Service
 }
 
-func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService) *Service {
+func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService, materialService *material.Service) *Service {
 	return &Service{
-		httpClient:    req.C().SetTimeout(time.Minute * 3),
-		db:            db,
-		taskQueue:     store.NewRedisQueue("Video_Task_Queue", redisCli),
-		uploadManager: manager,
-		userService:   userService,
+		httpClient:      req.C().SetTimeout(time.Minute * 3),
+		db:              db,
+		taskQueue:       store.NewRedisQueue("Video_Task_Queue", redisCli),
+		uploadManager:   manager,
+		userService:     userService,
+		materialService: materialService,
 	}
 }
 

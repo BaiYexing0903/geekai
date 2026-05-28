@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -16,28 +17,30 @@ import (
 )
 
 type Service struct {
-	db        *gorm.DB
-	redis     *redis.Client
-	taskQueue *store.RedisQueue
-	client    *Client
-	ctx       context.Context
-	cancel    context.CancelFunc
-	running   bool
-	uploader  *oss.UploaderManager
+	db              *gorm.DB
+	redis           *redis.Client
+	taskQueue       *store.RedisQueue
+	client          *Client
+	ctx             context.Context
+	cancel          context.CancelFunc
+	running         bool
+	uploader        *oss.UploaderManager
+	materialService *material.Service
 }
 
-func NewService(db *gorm.DB, redisCli *redis.Client, uploader *oss.UploaderManager, client *Client) *Service {
+func NewService(db *gorm.DB, redisCli *redis.Client, uploader *oss.UploaderManager, client *Client, materialService *material.Service) *Service {
 	taskQueue := store.NewRedisQueue("SeedanceTaskQueue", redisCli)
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Service{
-		db:        db,
-		redis:     redisCli,
-		taskQueue: taskQueue,
-		client:    client,
-		ctx:       ctx,
-		cancel:    cancel,
-		running:   false,
-		uploader:  uploader,
+		db:              db,
+		redis:           redisCli,
+		taskQueue:       taskQueue,
+		client:          client,
+		ctx:             ctx,
+		cancel:          cancel,
+		running:         false,
+		uploader:        uploader,
+		materialService: materialService,
 	}
 }
 

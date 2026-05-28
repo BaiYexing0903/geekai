@@ -42,6 +42,7 @@ func (h *NetHandler) RegisterRoutes() {
 	{
 		group.POST("", h.Upload)
 		group.POST("list", h.List)
+		group.POST("recent", h.Recent)
 		group.GET("remove", h.Remove)
 	}
 
@@ -80,12 +81,18 @@ func (h *NetHandler) Upload(c *gin.Context) {
 	resp.SUCCESS(c, file)
 }
 
+type uploadListRequest struct {
+	Urls     []string `json:"urls,omitempty"`
+	Page     int      `json:"page"`
+	PageSize int      `json:"page_size"`
+}
+
+type recentMaterialRequest struct {
+	Limit int `json:"limit"`
+}
+
 func (h *NetHandler) List(c *gin.Context) {
-	var data struct {
-		Urls     []string `json:"urls,omitempty"`
-		Page     int      `json:"page"`
-		PageSize int      `json:"page_size"`
-	}
+	var data uploadListRequest
 	if err := c.ShouldBindJSON(&data); err != nil {
 		resp.ERROR(c, types.InvalidArgs)
 		return
@@ -125,6 +132,42 @@ func (h *NetHandler) List(c *gin.Context) {
 	}
 
 	resp.SUCCESS(c, vo.NewPage(total, data.Page, data.PageSize, files))
+}
+
+func (h *NetHandler) Recent(c *gin.Context) {
+	var data recentMaterialRequest
+	if err := c.ShouldBindJSON(&data); err != nil {
+		resp.ERROR(c, types.InvalidArgs)
+		return
+	}
+	if data.Limit <= 0 {
+		data.Limit = 30
+	}
+	if data.Limit > 60 {
+		data.Limit = 60
+	}
+
+	userId := h.GetLoginUserId(c)
+	var items []model.File
+	err := h.DB.Where("user_id = ?", userId).Order("id desc").Limit(data.Limit).Find(&items).Error
+	if err != nil {
+		resp.ERROR(c, err.Error())
+		return
+	}
+
+	files := make([]vo.File, 0, len(items))
+	for _, v := range items {
+		var file vo.File
+		err := utils.CopyObject(v, &file)
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
+		file.CreatedAt = v.CreatedAt.Unix()
+		files = append(files, file)
+	}
+
+	resp.SUCCESS(c, files)
 }
 
 // Remove remove files

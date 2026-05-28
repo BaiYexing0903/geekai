@@ -46,31 +46,34 @@
 
             <!-- 图片上传区域（可折叠） -->
             <div v-if="store.lumaUseImageMode" class="img-inline">
-              <div class="img-uploader video-img-box mr-2">
-                <el-icon
-                  v-if="store.lumaParams.image"
-                  @click="store.removeLumaImage('start')"
-                  class="removeimg"
-                >
-                  <CircleCloseFilled />
-                </el-icon>
-                <el-upload
-                  class="uploader img-uploader"
-                  :auto-upload="true"
-                  :show-file-list="false"
-                  :http-request="store.uploadLumaStartImage"
-                  accept=".jpg,.png,.jpeg"
-                >
-                  <el-image
+              <div class="video-frame-picker mr-2">
+                <div class="img-uploader video-img-box">
+                  <el-icon
                     v-if="store.lumaParams.image"
-                    :src="store.lumaParams.image"
-                    fit="cover"
-                  />
-                  <div class="flex flex-col" v-else>
-                    <el-icon class="mb-1 text-base"><Plus /></el-icon>
-                    <span>起始帧</span>
-                  </div>
-                </el-upload>
+                    @click="store.removeLumaImage('start')"
+                    class="removeimg"
+                  >
+                    <CircleCloseFilled />
+                  </el-icon>
+                  <el-upload
+                    class="uploader img-uploader"
+                    :auto-upload="true"
+                    :show-file-list="false"
+                    :http-request="store.uploadLumaStartImage"
+                    accept=".jpg,.png,.jpeg"
+                  >
+                    <el-image
+                      v-if="store.lumaParams.image"
+                      :src="store.lumaParams.image"
+                      fit="cover"
+                    />
+                    <div class="flex flex-col" v-else>
+                      <el-icon class="mb-1 text-base"><Plus /></el-icon>
+                      <span>起始帧</span>
+                    </div>
+                  </el-upload>
+                </div>
+                <MaterialPicker accept="image" @select="store.selectLumaStartMaterial" />
               </div>
 
               <div
@@ -82,31 +85,34 @@
                 </el-tooltip>
               </div>
 
-              <div class="img-uploader video-img-box ml-2">
-                <el-icon
-                  v-if="store.lumaParams.image_tail"
-                  @click="store.removeLumaImage('end')"
-                  class="removeimg"
-                >
-                  <CircleCloseFilled />
-                </el-icon>
-                <el-upload
-                  class="uploader img-uploader"
-                  :auto-upload="true"
-                  :show-file-list="false"
-                  :http-request="store.uploadLumaEndImage"
-                  accept=".jpg,.png,.jpeg"
-                >
-                  <el-image
+              <div class="video-frame-picker ml-2">
+                <div class="img-uploader video-img-box">
+                  <el-icon
                     v-if="store.lumaParams.image_tail"
-                    :src="store.lumaParams.image_tail"
-                    fit="cover"
-                  />
-                  <div class="flex flex-col" v-else>
-                    <el-icon class="mb-1 text-base"><Plus /></el-icon>
-                    <span>结束帧</span>
-                  </div>
-                </el-upload>
+                    @click="store.removeLumaImage('end')"
+                    class="removeimg"
+                  >
+                    <CircleCloseFilled />
+                  </el-icon>
+                  <el-upload
+                    class="uploader img-uploader"
+                    :auto-upload="true"
+                    :show-file-list="false"
+                    :http-request="store.uploadLumaEndImage"
+                    accept=".jpg,.png,.jpeg"
+                  >
+                    <el-image
+                      v-if="store.lumaParams.image_tail"
+                      :src="store.lumaParams.image_tail"
+                      fit="cover"
+                    />
+                    <div class="flex flex-col" v-else>
+                      <el-icon class="mb-1 text-base"><Plus /></el-icon>
+                      <span>结束帧</span>
+                    </div>
+                  </el-upload>
+                </div>
+                <MaterialPicker accept="image" @select="store.selectLumaEndMaterial" />
               </div>
             </div>
 
@@ -323,31 +329,34 @@
 
             <!-- 图片上传区域（可折叠） -->
             <div v-if="store.kelingUseImageMode" class="img-inline">
-              <div class="img-uploader video-img-box mr-2">
-                <el-icon
-                  v-if="store.kelingParams.image"
-                  @click="store.removeKelingImage('start')"
-                  class="removeimg"
-                >
-                  <CircleCloseFilled />
-                </el-icon>
-                <el-upload
-                  class="uploader img-uploader"
-                  :auto-upload="true"
-                  :show-file-list="false"
-                  :http-request="store.uploadKelingStartImage"
-                  accept=".jpg,.png,.jpeg"
-                >
-                  <el-image
+              <div class="video-frame-picker mr-2">
+                <div class="img-uploader video-img-box">
+                  <el-icon
                     v-if="store.kelingParams.image"
-                    :src="store.kelingParams.image"
-                    fit="cover"
-                  />
-                  <div class="flex flex-col" v-else>
-                    <el-icon class="mb-1 text-base"><Plus /></el-icon>
-                    <span>起始帧</span>
-                  </div>
-                </el-upload>
+                    @click="store.removeKelingImage('start')"
+                    class="removeimg"
+                  >
+                    <CircleCloseFilled />
+                  </el-icon>
+                  <el-upload
+                    class="uploader img-uploader"
+                    :auto-upload="true"
+                    :show-file-list="false"
+                    :http-request="store.uploadKelingStartImage"
+                    accept=".jpg,.png,.jpeg"
+                  >
+                    <el-image
+                      v-if="store.kelingParams.image"
+                      :src="store.kelingParams.image"
+                      fit="cover"
+                    />
+                    <div class="flex flex-col" v-else>
+                      <el-icon class="mb-1 text-base"><Plus /></el-icon>
+                      <span>起始帧</span>
+                    </div>
+                  </el-upload>
+                </div>
+                <MaterialPicker accept="image" @select="store.selectKelingStartMaterial" />
               </div>
               <div
                 class="flex items-center h-[120px] cursor-pointer"
@@ -357,31 +366,34 @@
                   <i class="iconfont icon-exchange" @click="store.switchKelingImages"></i>
                 </el-tooltip>
               </div>
-              <div class="img-uploader video-img-box ml-2">
-                <el-icon
-                  v-if="store.kelingParams.image_tail"
-                  @click="store.removeKelingImage('end')"
-                  class="removeimg"
-                >
-                  <CircleCloseFilled />
-                </el-icon>
-                <el-upload
-                  class="uploader img-uploader"
-                  :auto-upload="true"
-                  :show-file-list="false"
-                  :http-request="store.uploadKelingEndImage"
-                  accept=".jpg,.png,.jpeg"
-                >
-                  <el-image
+              <div class="video-frame-picker ml-2">
+                <div class="img-uploader video-img-box">
+                  <el-icon
                     v-if="store.kelingParams.image_tail"
-                    :src="store.kelingParams.image_tail"
-                    fit="cover"
-                  />
-                  <div class="flex flex-col" v-else>
-                    <el-icon class="mb-1 text-base"><Plus /></el-icon>
-                    <span>结束帧</span>
-                  </div>
-                </el-upload>
+                    @click="store.removeKelingImage('end')"
+                    class="removeimg"
+                  >
+                    <CircleCloseFilled />
+                  </el-icon>
+                  <el-upload
+                    class="uploader img-uploader"
+                    :auto-upload="true"
+                    :show-file-list="false"
+                    :http-request="store.uploadKelingEndImage"
+                    accept=".jpg,.png,.jpeg"
+                  >
+                    <el-image
+                      v-if="store.kelingParams.image_tail"
+                      :src="store.kelingParams.image_tail"
+                      fit="cover"
+                    />
+                    <div class="flex flex-col" v-else>
+                      <el-icon class="mb-1 text-base"><Plus /></el-icon>
+                      <span>结束帧</span>
+                    </div>
+                  </el-upload>
+                </div>
+                <MaterialPicker accept="image" @select="store.selectKelingEndMaterial" />
               </div>
             </div>
 
@@ -639,6 +651,7 @@
 </template>
 
 <script setup>
+import MaterialPicker from '@/components/MaterialPicker.vue'
 import Generating from '@/components/ui/Generating.vue'
 import { useVideoStore } from '@/store/video'
 import { CircleCloseFilled, InfoFilled, Plus } from '@element-plus/icons-vue'
