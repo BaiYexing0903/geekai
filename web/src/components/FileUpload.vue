@@ -72,6 +72,9 @@
           <div class="upload-text">{{ placeholder }}</div>
           <div v-if="tip" class="upload-tip">{{ tip }}</div>
         </el-upload>
+        <div class="material-picker-entry">
+          <MaterialPicker :accept="accept" @select="selectMaterial" />
+        </div>
       </div>
     </template>
 

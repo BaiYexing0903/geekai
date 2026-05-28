@@ -253,6 +253,7 @@ func (s *Service) pollTaskStatus() {
 						videoUrl = resp.Content.VideoURL
 					}
 					updates["video_url"] = videoUrl
+					s.materialService.RecordGenerated(job.UserId, "seedance.mp4", videoUrl)
 				}
 
 				// 下载末帧图
