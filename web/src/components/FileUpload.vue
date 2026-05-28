@@ -14,6 +14,9 @@
           <div class="upload-text">{{ placeholder }}</div>
           <div v-if="tip" class="upload-tip">{{ tip }}</div>
         </el-upload>
+        <div class="material-picker-entry">
+          <MaterialPicker :accept="accept" @select="selectMaterial" />
+        </div>
       </div>
       <div v-else class="file-item single">
         <el-image v-if="isImage(fileList[0])" :src="fileList[0]" fit="cover" class="file-thumb" />
@@ -52,6 +55,9 @@
             <span class="add-text">上传</span>
           </el-upload>
         </div>
+        <div v-if="fileList.length < maxCount" class="file-item add-btn material-add-btn">
+          <MaterialPicker :accept="accept" @select="selectMaterial" />
+        </div>
       </div>
       <div v-else class="upload-area">
         <el-upload
@@ -74,6 +80,7 @@
 </template>
 
 <script setup>
+import MaterialPicker from '@/components/MaterialPicker.vue'
 import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 import { Delete, Plus, UploadFilled } from '@element-plus/icons-vue'
@@ -147,6 +154,24 @@ function fileExt(url) {
   return url.split('?')[0].split('.').pop().toUpperCase()
 }
 
+function addFileUrl(url) {
+  const fileUrl = replaceImg(url)
+  if (props.multiple || props.maxCount > 1) {
+    if (fileList.value.length >= props.maxCount) {
+      ElMessage.warning(`最多只能上传 ${props.maxCount} 个文件`)
+      return
+    }
+    fileList.value = [...fileList.value, fileUrl]
+  } else {
+    fileList.value = [fileUrl]
+  }
+  emit('upload-success', fileUrl)
+}
+
+function selectMaterial(url) {
+  addFileUrl(url)
+}
+
 function validateFile(file) {
   if (props.accept && props.accept !== '*') {
     const types = props.accept.split(',').map((t) => t.trim())
@@ -191,12 +216,7 @@ async function handleUpload(options) {
     clearInterval(timer)
     uploadProgress.value = 100
 
-    if (props.multiple || props.maxCount > 1) {
-      fileList.value = [...fileList.value, url]
-    } else {
-      fileList.value = [url]
-    }
-    emit('upload-success', url)
+    addFileUrl(url)
     ElMessage.success('上传成功')
     options.onSuccess?.({})
   } catch (e) {
@@ -361,6 +381,26 @@ function removeFile(index) {
   font-size: 12px;
   color: var(--el-text-color-secondary);
   margin-top: 2px;
+}
+
+.material-picker-entry {
+  display: flex;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.material-add-btn {
+  :deep(.material-picker),
+  :deep(.el-button) {
+    width: 100%;
+    height: 100%;
+  }
+
+  :deep(.el-button) {
+    border: 0;
+    white-space: normal;
+    line-height: 1.3;
+  }
 }
 
 .upload-progress {

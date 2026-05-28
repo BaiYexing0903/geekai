@@ -88,7 +88,7 @@
         <!-- 图片上传区域 -->
         <div v-if="video.lumaUseImageMode" class="bg-white rounded-xl p-4 shadow-sm">
           <div class="grid grid-cols-2 gap-4">
-            <div class="relative">
+            <div class="space-y-2">
               <div
                 class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer h-32"
               >
@@ -125,8 +125,9 @@
                   </div>
                 </div>
               </div>
+              <MaterialPicker accept="image/*" @select="video.selectLumaStartMaterial" />
             </div>
-            <div class="relative">
+            <div class="space-y-2">
               <div
                 class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer h-32"
               >
@@ -163,6 +164,7 @@
                   </div>
                 </div>
               </div>
+              <MaterialPicker accept="image/*" @select="video.selectLumaEndMaterial" />
             </div>
           </div>
         </div>
@@ -299,7 +301,7 @@
         <!-- 图片上传区域 -->
         <div v-if="video.kelingUseImageMode" class="bg-white rounded-xl p-4 shadow-sm">
           <div class="grid grid-cols-2 gap-4">
-            <div class="relative">
+            <div class="space-y-2">
               <div
                 class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer h-32"
               >
@@ -336,8 +338,9 @@
                   </div>
                 </div>
               </div>
+              <MaterialPicker accept="image/*" @select="video.selectKelingStartMaterial" />
             </div>
-            <div class="relative">
+            <div class="space-y-2">
               <div
                 class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer h-32"
               >
@@ -374,6 +377,7 @@
                   </div>
                 </div>
               </div>
+              <MaterialPicker accept="image/*" @select="video.selectKelingEndMaterial" />
             </div>
           </div>
         </div>
@@ -612,6 +616,7 @@
 
 <script setup>
 import '@/assets/css/mobile/video.scss'
+import MaterialPicker from '@/components/MaterialPicker.vue'
 import CustomSelect from '@/components/mobile/CustomSelect.vue'
 import { useVideoStore } from '@/store/mobile/video'
 import { showConfirmDialog } from 'vant'

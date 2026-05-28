@@ -17,6 +17,9 @@
               <video :src="displayUrl(item.url)" muted preload="metadata" />
               <span>视频素材</span>
             </div>
+            <div v-else-if="isAudio(item.ext || item.url)" class="material-file">
+              <span>音频素材</span>
+            </div>
             <div v-else class="material-file">
               <span>{{ fileExt(item.ext || item.url) || '文件' }}</span>
             </div>
@@ -51,14 +54,38 @@ const loading = ref(false)
 const items = ref([])
 
 const materials = computed(() => {
-  if (props.accept === 'image') {
-    return items.value.filter((item) => isImage(item.ext || item.url))
-  }
-  if (props.accept === 'video') {
-    return items.value.filter((item) => isVideo(item.ext || item.url))
-  }
-  return items.value
+  const types = acceptTypes(props.accept)
+  if (types.length === 0) return items.value
+
+  return items.value.filter((item) => {
+    const value = item.ext || item.url
+    return types.some((type) => matchType(value, type))
+  })
 })
+
+const acceptTypes = (accept) => {
+  const normalized = (accept || '').trim().toLowerCase()
+  if (!normalized || normalized === '*') return []
+
+  return normalized
+    .split(',')
+    .map((type) => type.trim())
+    .map((type) => {
+      if (type === 'image' || type.startsWith('image/')) return 'image'
+      if (type === 'video' || type.startsWith('video/')) return 'video'
+      if (type === 'audio' || type.startsWith('audio/')) return 'audio'
+      if (type.startsWith('.')) return type.slice(1)
+      return type
+    })
+    .filter(Boolean)
+}
+
+const matchType = (value, type) => {
+  if (type === 'image') return isImage(value)
+  if (type === 'video') return isVideo(value)
+  if (type === 'audio') return isAudio(value)
+  return fileExt(value) === type
+}
 
 const openPicker = async () => {
   visible.value = true
@@ -85,6 +112,7 @@ const fileExt = (value) => {
 }
 const isImage = (value) => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(fileExt(value))
 const isVideo = (value) => ['mp4', 'webm', 'mov', 'm4v'].includes(fileExt(value))
+const isAudio = (value) => ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'].includes(fileExt(value))
 </script>
 
 <style lang="scss" scoped>

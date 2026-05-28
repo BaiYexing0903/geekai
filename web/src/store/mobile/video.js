@@ -3,6 +3,7 @@ import { ref, reactive, watch } from 'vue'
 import { httpGet, httpPost } from '@/utils/http'
 import { showMessageOK, showMessageError, showLoading, closeLoading } from '@/utils/dialog'
 import { getSystemInfo } from '@/store/cache'
+import { replaceImg } from '@/utils/libs'
 
 export const useVideoStore = defineStore('video', () => {
   // 状态
@@ -223,6 +224,26 @@ export const useVideoStore = defineStore('video', () => {
         closeLoading()
       })
   }
+  const selectLumaStartMaterial = (url) => {
+    const imageUrl = replaceImg(url)
+    lumaParams.image = imageUrl
+    lumaStartImage.value = [{ url: imageUrl }]
+  }
+  const selectLumaEndMaterial = (url) => {
+    const imageUrl = replaceImg(url)
+    lumaParams.image_tail = imageUrl
+    lumaEndImage.value = [{ url: imageUrl }]
+  }
+  const selectKelingStartMaterial = (url) => {
+    const imageUrl = replaceImg(url)
+    kelingParams.image = imageUrl
+    kelingStartImage.value = [{ url: imageUrl }]
+  }
+  const selectKelingEndMaterial = (url) => {
+    const imageUrl = replaceImg(url)
+    kelingParams.image_tail = imageUrl
+    kelingEndImage.value = [{ url: imageUrl }]
+  }
   const createLumaVideo = () => {
     if (!lumaParams.prompt.trim()) {
       showMessageError('请输入视频提示词')
@@ -385,6 +406,10 @@ export const useVideoStore = defineStore('video', () => {
     uploadKelingStartImage,
     uploadKelingEndImage,
     uploadImage,
+    selectLumaStartMaterial,
+    selectLumaEndMaterial,
+    selectKelingStartMaterial,
+    selectKelingEndMaterial,
     createLumaVideo,
     createKelingVideo,
     fetchData,
