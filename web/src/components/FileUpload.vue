@@ -15,7 +15,7 @@
           <div v-if="tip" class="upload-tip">{{ tip }}</div>
         </el-upload>
         <div class="material-picker-entry">
-          <MaterialPicker :accept="accept" @select="selectMaterial" />
+          <MaterialPicker :accept="accept" @open="emit('picker-open')" @close="emit('picker-close')" @select="selectMaterial" />
         </div>
       </div>
       <div v-else class="file-item single">
@@ -56,7 +56,7 @@
           </el-upload>
         </div>
         <div v-if="fileList.length < maxCount" class="file-item add-btn material-add-btn">
-          <MaterialPicker :accept="accept" @select="selectMaterial" />
+          <MaterialPicker :accept="accept" @open="emit('picker-open')" @close="emit('picker-close')" @select="selectMaterial" />
         </div>
       </div>
       <div v-else class="upload-area">
@@ -73,7 +73,7 @@
           <div v-if="tip" class="upload-tip">{{ tip }}</div>
         </el-upload>
         <div class="material-picker-entry">
-          <MaterialPicker :accept="accept" @select="selectMaterial" />
+          <MaterialPicker :accept="accept" @open="emit('picker-open')" @close="emit('picker-close')" @select="selectMaterial" />
         </div>
       </div>
     </template>
@@ -101,7 +101,7 @@ const props = defineProps({
   previewMap: { type: Object, default: () => ({}) },
 })
 
-const emit = defineEmits(['update:modelValue', 'upload-success'])
+const emit = defineEmits(['update:modelValue', 'upload-success', 'picker-open', 'picker-close'])
 
 const uploading = ref(false)
 const uploadProgress = ref(0)

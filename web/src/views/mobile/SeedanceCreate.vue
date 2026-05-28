@@ -63,40 +63,45 @@
 
       <div class="form-item">
         <span class="form-label">参考素材</span>
-        <FileUpload
-          v-if="store.isVeo"
-          v-model="store.veoParams.images"
-          accept="image/*"
-          multiple
-          :maxCount="2"
-          placeholder="上传首帧/尾帧图片，不上传则为文生视频"
-        />
-        <template v-else-if="store.activeMode === 'image_to_video_dual'">
+        <div class="material-upload-wrap">
           <FileUpload
-            v-model="store.imageToVideoDualParams.first_frame_url"
+            v-if="store.isVeo"
+            v-model="store.veoParams.images"
             accept="image/*"
-            placeholder="上传首帧图片"
-            tip="首帧图片，必填"
+            multiple
+            :maxCount="2"
+            placeholder="上传首帧/尾帧图片，不上传则为文生视频"
+            @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
           />
+          <template v-else-if="store.activeMode === 'image_to_video_dual'">
+            <FileUpload
+              v-model="store.imageToVideoDualParams.first_frame_url"
+              accept="image/*"
+              placeholder="上传首帧图片"
+              tip="首帧图片，必填"
+              @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
+            />
+            <FileUpload
+              v-model="store.imageToVideoDualParams.last_frame_url"
+              accept="image/*"
+              placeholder="上传尾帧图片"
+              tip="尾帧图片，必填"
+              @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
+            />
+          </template>
           <FileUpload
-            v-model="store.imageToVideoDualParams.last_frame_url"
-            accept="image/*"
-            placeholder="上传尾帧图片"
-            tip="尾帧图片，必填"
+            v-else
+            v-model="store.multimodalRefParams.reference_urls"
+            accept="image/*,video/*,audio/*"
+            multiple
+            :maxCount="9"
+            placeholder="点击上传图片、视频或音频"
+            :previewMap="store.referenceAssetPreviews"
+            @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
           />
-        </template>
-        <FileUpload
-          v-else
-          v-model="store.multimodalRefParams.reference_urls"
-          accept="image/*,video/*,audio/*"
-          multiple
-          :maxCount="9"
-          placeholder="点击上传图片、视频或音频"
-          :previewMap="store.referenceAssetPreviews"
-        />
+        </div>
         <van-button
           v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
-          block
           plain
           type="primary"
           class="portrait-picker-btn"
@@ -248,6 +253,7 @@ import { replaceImg } from '@/utils/libs'
 const store = useSeedanceStore()
 const showModelPicker = ref(false)
 const showMentionPicker = ref(false)
+const pausedVideoUrl = ref('')
 const promptFieldRef = ref(null)
 const promptCursor = ref(0)
 
@@ -301,6 +307,20 @@ function toggleMentionPicker() {
   rememberPromptCursor()
   if (store.activeMode !== 'multimodal_ref') return
   showMentionPicker.value = true
+}
+
+function pauseVideoPreview() {
+  if (!store.showVideoDialog) return
+  pausedVideoUrl.value = store.currentVideoUrl
+  store.showVideoDialog = false
+  store.currentVideoUrl = ''
+}
+
+function resumeVideoPreview() {
+  if (!pausedVideoUrl.value) return
+  store.currentVideoUrl = pausedVideoUrl.value
+  store.showVideoDialog = true
+  pausedVideoUrl.value = ''
 }
 
 function switchSeedanceMode(mode) {
@@ -473,8 +493,12 @@ onUnmounted(() => store.cleanup())
   height: 100%;
   object-fit: cover;
 }
+.material-upload-wrap {
+  margin-bottom: 8px;
+}
+
 .portrait-picker-btn {
-  margin-top: 8px;
+  width: auto;
 }
 .portrait-sheet {
   padding: 14px;

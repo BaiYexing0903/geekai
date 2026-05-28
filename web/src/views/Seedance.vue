@@ -85,40 +85,46 @@
 
         <!-- 参考素材 -->
         <div class="param-line pt"><span class="label">参考素材：</span></div>
-        <div class="param-line">
-          <FileUpload
-            v-if="store.isVeo"
-            v-model="store.veoParams.images"
-            accept="image/*"
-            multiple
-            :maxCount="2"
-            placeholder="上传首帧/尾帧图片，不上传则为文生视频"
-            tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
-          />
-          <template v-else-if="store.activeMode === 'image_to_video_dual'">
+        <div class="param-line material-upload-line">
+          <div class="material-upload-wrap">
             <FileUpload
-              v-model="store.imageToVideoDualParams.first_frame_url"
+              v-if="store.isVeo"
+              v-model="store.veoParams.images"
               accept="image/*"
-              placeholder="上传首帧图片"
-              tip="首帧图片，必填"
+              multiple
+              :maxCount="2"
+              placeholder="上传首帧/尾帧图片，不上传则为文生视频"
+              tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
+              @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
             />
+            <template v-else-if="store.activeMode === 'image_to_video_dual'">
+              <FileUpload
+                v-model="store.imageToVideoDualParams.first_frame_url"
+                accept="image/*"
+                placeholder="上传首帧图片"
+                tip="首帧图片，必填"
+                @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
+              />
+              <FileUpload
+                v-model="store.imageToVideoDualParams.last_frame_url"
+                accept="image/*"
+                placeholder="上传尾帧图片"
+                tip="尾帧图片，必填"
+                @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
+              />
+            </template>
             <FileUpload
-              v-model="store.imageToVideoDualParams.last_frame_url"
-              accept="image/*"
-              placeholder="上传尾帧图片"
-              tip="尾帧图片，必填"
+              v-else
+              v-model="store.multimodalRefParams.reference_urls"
+              accept="image/*,video/*,audio/*"
+              multiple
+              :maxCount="9"
+              placeholder="拖拽图片、视频或音频，或点击上传"
+              tip="支持图片、视频、音频素材"
+              :previewMap="store.referenceAssetPreviews"
+              @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
             />
-          </template>
-          <FileUpload
-            v-else
-            v-model="store.multimodalRefParams.reference_urls"
-            accept="image/*,video/*,audio/*"
-            multiple
-            :maxCount="9"
-            placeholder="拖拽图片、视频或音频，或点击上传"
-            tip="支持图片、视频、音频素材"
-            :previewMap="store.referenceAssetPreviews"
-          />
+          </div>
           <el-button
             v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
             class="portrait-picker-btn"
@@ -344,6 +350,7 @@ import { buildSeedanceMentionOptions } from '@/store/seedanceReferences'
 const store = useSeedanceStore()
 const promptInputRef = ref(null)
 const showMentionPicker = ref(false)
+const pausedVideoUrl = ref('')
 const promptCursor = ref(0)
 
 const filterLabels = { all: '全部', processing: '进行中', succeeded: '已完成', failed: '失败' }
@@ -437,6 +444,20 @@ function toggleMentionPicker() {
   rememberPromptCursor()
   if (store.activeMode !== 'multimodal_ref') return
   showMentionPicker.value = true
+}
+
+function pauseVideoPreview() {
+  if (!store.showDialog) return
+  pausedVideoUrl.value = store.currentVideoUrl
+  store.showDialog = false
+  store.currentVideoUrl = ''
+}
+
+function resumeVideoPreview() {
+  if (!pausedVideoUrl.value) return
+  store.currentVideoUrl = pausedVideoUrl.value
+  store.showDialog = true
+  pausedVideoUrl.value = ''
 }
 
 function switchSeedanceMode(mode) {
@@ -578,8 +599,19 @@ onUnmounted(() => store.cleanup())
   opacity: 0.8;
 }
 
+.material-upload-line {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.material-upload-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
 .portrait-picker-btn {
-  margin-top: 8px;
+  flex: 0 0 auto;
 }
 
 .portrait-filters {

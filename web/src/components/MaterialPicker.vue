@@ -1,7 +1,7 @@
 <template>
   <div class="material-picker">
     <el-button size="small" plain @click="openPicker">从素材库选择</el-button>
-    <el-dialog v-model="visible" title="选择素材" width="720px" :close-on-click-modal="true">
+    <el-dialog v-model="visible" title="选择素材" width="720px" :close-on-click-modal="true" append-to-body @closed="emit('close')">
       <div v-loading="loading" class="material-picker-body">
         <el-empty v-if="!loading && materials.length === 0" description="暂无可复用素材" />
         <div v-else class="material-grid">
@@ -48,7 +48,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['select'])
+const emit = defineEmits(['select', 'open', 'close'])
 const visible = ref(false)
 const loading = ref(false)
 const items = ref([])
@@ -88,6 +88,7 @@ const matchType = (value, type) => {
 }
 
 const openPicker = async () => {
+  emit('open')
   visible.value = true
   loading.value = true
   try {
