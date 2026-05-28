@@ -12,7 +12,6 @@ import (
 	"geekai/core/types"
 	logger2 "geekai/logger"
 	"geekai/service"
-	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -31,22 +30,20 @@ var logger = logger2.GetLogger()
 // DALL-E 绘画服务
 
 type Service struct {
-	httpClient      *req.Client
-	db              *gorm.DB
-	uploadManager   *oss.UploaderManager
-	taskQueue       *store.RedisQueue
-	userService     *service.UserService
-	materialService *material.Service
+	httpClient    *req.Client
+	db            *gorm.DB
+	uploadManager *oss.UploaderManager
+	taskQueue     *store.RedisQueue
+	userService   *service.UserService
 }
 
-func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService, materialService *material.Service) *Service {
+func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService) *Service {
 	return &Service{
-		httpClient:      req.C().SetTimeout(time.Minute * 3),
-		db:              db,
-		taskQueue:       store.NewRedisQueue("DallE_Task_Queue", redisCli),
-		uploadManager:   manager,
-		userService:     userService,
-		materialService: materialService,
+		httpClient:    req.C().SetTimeout(time.Minute * 3),
+		db:            db,
+		taskQueue:     store.NewRedisQueue("DallE_Task_Queue", redisCli),
+		uploadManager: manager,
+		userService:   userService,
 	}
 }
 
@@ -209,7 +206,6 @@ func (s *Service) Image(task types.DallTask, sync bool) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("err with update database: %v", err)
 	}
-	s.materialService.RecordGenerated(task.UserId, "dalle.png", imgURL)
 
 	var content string
 	if sync {
@@ -303,9 +299,5 @@ func (s *Service) downloadImage(jobId uint, orgURL string) (string, error) {
 		return "", err
 	}
 
-	var job model.DallJob
-	if err := s.db.Select("user_id").First(&job, jobId).Error; err == nil {
-		s.materialService.RecordGenerated(job.UserId, "dalle.png", imgURL)
-	}
 	return imgURL, nil
 }

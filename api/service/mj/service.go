@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"geekai/core/types"
 	"geekai/service"
-	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -31,17 +30,15 @@ type Service struct {
 	db              *gorm.DB
 	uploaderManager *oss.UploaderManager
 	userService     *service.UserService
-	materialService *material.Service
 }
 
-func NewService(redisCli *redis.Client, db *gorm.DB, client *Client, manager *oss.UploaderManager, userService *service.UserService, materialService *material.Service) *Service {
+func NewService(redisCli *redis.Client, db *gorm.DB, client *Client, manager *oss.UploaderManager, userService *service.UserService) *Service {
 	return &Service{
 		db:              db,
 		taskQueue:       store.NewRedisQueue("MidJourney_Task_Queue", redisCli),
 		client:          client,
 		uploaderManager: manager,
 		userService:     userService,
-		materialService: materialService,
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"geekai/core/types"
 	logger2 "geekai/logger"
 	"geekai/service"
+	"geekai/service/material"
 	"geekai/service/oss"
 	"geekai/store"
 	"geekai/store/model"
@@ -29,20 +30,22 @@ import (
 var logger = logger2.GetLogger()
 
 type Service struct {
-	httpClient    *req.Client
-	db            *gorm.DB
-	uploadManager *oss.UploaderManager
-	taskQueue     *store.RedisQueue
-	userService   *service.UserService
+	httpClient      *req.Client
+	db              *gorm.DB
+	uploadManager   *oss.UploaderManager
+	taskQueue       *store.RedisQueue
+	userService     *service.UserService
+	materialService *material.Service
 }
 
-func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService) *Service {
+func NewService(db *gorm.DB, manager *oss.UploaderManager, redisCli *redis.Client, userService *service.UserService, materialService *material.Service) *Service {
 	return &Service{
-		httpClient:    req.C().SetTimeout(time.Minute * 5),
-		db:            db,
-		taskQueue:     store.NewRedisQueue("AiDraw_Task_Queue", redisCli),
-		uploadManager: manager,
-		userService:   userService,
+		httpClient:      req.C().SetTimeout(time.Minute * 5),
+		db:              db,
+		taskQueue:       store.NewRedisQueue("AiDraw_Task_Queue", redisCli),
+		uploadManager:   manager,
+		userService:     userService,
+		materialService: materialService,
 	}
 }
 
@@ -94,8 +97,8 @@ func (s *Service) Run() {
 // ---- Gemini types ----
 
 type geminiReq struct {
-	Contents         []geminiContent  `json:"contents"`
-	GenerationConfig geminiGenConfig  `json:"generationConfig"`
+	Contents         []geminiContent `json:"contents"`
+	GenerationConfig geminiGenConfig `json:"generationConfig"`
 }
 
 type geminiContent struct {
@@ -103,8 +106,8 @@ type geminiContent struct {
 }
 
 type geminiPart struct {
-	Text       string             `json:"text,omitempty"`
-	InlineData *geminiInlineData  `json:"inlineData,omitempty"`
+	Text       string            `json:"text,omitempty"`
+	InlineData *geminiInlineData `json:"inlineData,omitempty"`
 }
 
 type geminiInlineData struct {
@@ -135,11 +138,11 @@ type geminiRes struct {
 // ---- GPT-Image-2 types ----
 
 type gptImgReq struct {
-	Model  string `json:"model"`
-	Prompt string `json:"prompt"`
-	Size   string `json:"size,omitempty"`
+	Model   string `json:"model"`
+	Prompt  string `json:"prompt"`
+	Size    string `json:"size,omitempty"`
 	Quality string `json:"quality,omitempty"`
-	N      int    `json:"n,omitempty"`
+	N       int    `json:"n,omitempty"`
 }
 
 type gptImgRes struct {
@@ -211,6 +214,7 @@ func (s *Service) Image(task types.AiDrawTask) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("err with update database: %v", err)
 	}
+	s.materialService.RecordGenerated(task.UserId, "aidraw.png", ossURL)
 
 	return "", nil
 }
