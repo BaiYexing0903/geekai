@@ -54,7 +54,7 @@
               @blur="onPromptBlur"
             />
             <el-button
-              v-if="store.activeMode === 'multimodal_ref'"
+              v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
               class="mention-btn"
               text
               @mousedown.prevent.stop="toggleMentionPicker"
@@ -120,7 +120,7 @@
             :previewMap="store.referenceAssetPreviews"
           />
           <el-button
-            v-if="store.activeMode === 'multimodal_ref'"
+            v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
             class="portrait-picker-btn"
             :loading="store.portraitLoading"
             @click="store.openPortraitDialog"

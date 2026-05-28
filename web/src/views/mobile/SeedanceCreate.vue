@@ -57,7 +57,7 @@
             @select="rememberPromptCursor"
             @blur="onPromptBlur"
           />
-          <button v-if="store.activeMode === 'multimodal_ref'" type="button" class="mention-btn" @mousedown.prevent.stop="toggleMentionPicker" @click.prevent.stop>@</button>
+          <button v-if="!store.isVeo && store.activeMode === 'multimodal_ref'" type="button" class="mention-btn" @mousedown.prevent.stop="toggleMentionPicker" @click.prevent.stop>@</button>
         </div>
       </div>
 
@@ -95,7 +95,7 @@
           :previewMap="store.referenceAssetPreviews"
         />
         <van-button
-          v-if="store.activeMode === 'multimodal_ref'"
+          v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
           block
           plain
           type="primary"
@@ -211,7 +211,7 @@
       </div>
     </van-popup>
 
-    <van-popup v-if="store.activeMode === 'multimodal_ref'" v-model:show="showMentionPicker" round position="bottom">
+    <van-popup v-if="!store.isVeo && store.activeMode === 'multimodal_ref'" v-model:show="showMentionPicker" round position="bottom">
       <div class="mention-sheet">
         <div class="mention-title">选择参考素材</div>
         <div v-if="mentionOptions.length === 0" class="mention-empty">还没创建主体</div>
