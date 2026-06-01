@@ -348,11 +348,14 @@ const qualities = [
   { name: '高', value: 'high' },
 ]
 const gptSizes = [
-  { label: '1:1 (1024x1024)', value: '1024x1024' },
-  { label: '2:3 (1024x1536)', value: '1024x1536' },
-  { label: '3:2 (1536x1024)', value: '1536x1024' },
-  { label: '9:16 (1088x1920)', value: '1088x1920' },
-  { label: '16:9 (1920x1088)', value: '1920x1088' },
+  { label: '默认 (auto)', value: 'auto' },
+  { label: '正方形 (1024x1024)', value: '1024x1024' },
+  { label: '横版 (1536x1024)', value: '1536x1024' },
+  { label: '竖版 (1024x1536)', value: '1024x1536' },
+  { label: '2K正方形 (2048x2048)', value: '2048x2048' },
+  { label: '2K横版 (2048x1152)', value: '2048x1152' },
+  { label: '4K横版 (3840x2160)', value: '3840x2160' },
+  { label: '4K竖版 (2160x3840)', value: '2160x3840' },
 ]
 
 const selectedModel = ref(null)
