@@ -24,6 +24,9 @@ docker/log
 docker/static
 
 # Config with secrets
+.env
+*.env
+!.env.example
 config.toml
 config/config.yaml
 
