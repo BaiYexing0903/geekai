@@ -4,6 +4,13 @@
     <div class="params-panel">
       <!-- 参数区域 -->
       <div class="params-container">
+        <!-- 虚拟人像管理入口 -->
+        <div v-if="!store.isVeo" class="param-line" style="margin-bottom: 4px">
+          <el-button size="small" @click="openPortraitManager">
+            <i class="iconfont icon-avatar" style="margin-right: 4px"></i>虚拟人像管理
+          </el-button>
+        </div>
+
         <!-- 模型选择 -->
         <div class="param-line pt">
           <span class="label">模型：</span>
@@ -126,10 +133,10 @@
             />
           </div>
           <el-button
-            v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
+            v-if="!store.isVeo && (store.activeMode === 'multimodal_ref' || store.activeMode === 'image_to_video_dual')"
             class="portrait-picker-btn"
             :loading="store.portraitLoading"
-            @click="store.openPortraitDialog"
+            @click="openPortraitQuickPicker"
           >
             选择虚拟人像
           </el-button>
@@ -271,27 +278,20 @@
       </div>
     </div>
 
-    <el-dialog v-model="store.portraitDialogVisible" title="选择虚拟人像" width="860px" destroy-on-close>
-      <el-tabs v-model="store.portraitActiveTab">
-        <el-tab-pane label="人像库" name="library">
-          <div class="portrait-filters">
-            <el-select v-model="store.portraitFilters.gender" clearable placeholder="性别" @change="store.fetchPortraits(1)">
-              <el-option label="女性" value="女性" />
-              <el-option label="男性" value="男性" />
-            </el-select>
-            <el-input v-model="store.portraitFilters.country" clearable placeholder="国家，如：中国" @change="store.fetchPortraits(1)" />
-            <el-input v-model="store.portraitFilters.occupation" clearable placeholder="职业，如：演员" @change="store.fetchPortraits(1)" />
-          </div>
-          <div v-loading="store.portraitLoading" class="portrait-grid">
-            <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
-              <img :src="portrait.preview_url" alt="" />
-              <strong>{{ portrait.title }}</strong>
-              <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
-            </button>
-            <el-empty v-if="!store.portraitLoading && store.portraitList.length === 0" description="没有找到虚拟人像" />
+    <!-- 虚拟人像管理弹窗 -->
+    <el-dialog v-model="portraitManagerVisible" title="虚拟人像管理" width="860px" destroy-on-close>
+      <el-tabs v-model="portraitManagerTab">
+        <el-tab-pane label="我的人像" name="my">
+          <div v-loading="store.myPortraitsLoading" class="portrait-grid">
+            <div v-for="p in store.myPortraits" :key="p.id" class="portrait-card">
+              <img :src="p.preview_url" alt="" />
+              <strong>{{ p.name || '未命名' }}</strong>
+              <el-button type="danger" size="small" text @click="store.removeMyPortrait(p.id)">删除</el-button>
+            </div>
+            <el-empty v-if="!store.myPortraitsLoading && store.myPortraits.length === 0" description="暂无注册人像，请上传注册" />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="上传人像" name="upload">
+        <el-tab-pane label="上传注册" name="upload">
           <el-upload
             drag
             :show-file-list="false"
@@ -301,7 +301,7 @@
           >
             <el-icon :size="28"><UploadFilled /></el-icon>
             <div class="upload-text">拖拽人像图片到此处，或点击上传</div>
-            <div class="upload-tip">支持 jpeg、png、webp、bmp、tiff、gif、heic/heif，单张小于 30MB</div>
+            <div class="upload-tip">上传后自动注册为虚拟人像素材，支持 jpeg、png、webp 等格式，单张小于 30MB</div>
           </el-upload>
           <el-alert
             v-if="store.portraitUploadLoading"
@@ -312,17 +312,44 @@
             class="portrait-upload-alert"
           />
         </el-tab-pane>
+        <el-tab-pane label="人像库" name="library">
+          <div class="portrait-filters">
+            <el-select v-model="store.portraitFilters.gender" clearable placeholder="性别" @change="store.fetchPortraits(1)">
+              <el-option label="女性" value="女性" />
+              <el-option label="男性" value="男性" />
+            </el-select>
+            <el-input v-model="store.portraitFilters.country" clearable placeholder="国家，如：中国" @change="store.fetchPortraits(1)" />
+            <el-input v-model="store.portraitFilters.occupation" clearable placeholder="职业，如：演员" @change="store.fetchPortraits(1)" />
+          </div>
+          <div v-loading="store.portraitLoading" class="portrait-grid">
+            <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="registerAndSave(portrait)">
+              <img :src="portrait.preview_url" alt="" />
+              <strong>{{ portrait.title }}</strong>
+              <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
+            </button>
+            <el-empty v-if="!store.portraitLoading && store.portraitList.length === 0" description="没有找到虚拟人像" />
+          </div>
+          <el-pagination
+            layout="prev, pager, next"
+            :current-page="store.portraitFilters.page"
+            :page-size="store.portraitFilters.page_size"
+            :total="store.portraitTotal"
+            @current-change="store.fetchPortraits"
+            style="margin-top: 16px; text-align: center"
+          />
+        </el-tab-pane>
       </el-tabs>
-      <template #footer>
-        <el-pagination
-          v-if="store.portraitActiveTab === 'library'"
-          layout="prev, pager, next"
-          :current-page="store.portraitFilters.page"
-          :page-size="store.portraitFilters.page_size"
-          :total="store.portraitTotal"
-          @current-change="store.fetchPortraits"
-        />
-      </template>
+    </el-dialog>
+
+    <!-- 快速选择虚拟人像弹窗 -->
+    <el-dialog v-model="portraitQuickPickerVisible" title="选择虚拟人像" width="600px" destroy-on-close>
+      <div v-loading="store.myPortraitsLoading" class="portrait-grid">
+        <button v-for="p in store.myPortraits" :key="p.id" type="button" class="portrait-card" @click="quickSelectPortrait(p)">
+          <img :src="p.preview_url" alt="" />
+          <strong>{{ p.name || '未命名' }}</strong>
+        </button>
+        <el-empty v-if="!store.myPortraitsLoading && store.myPortraits.length === 0" description="暂无注册人像，请先到虚拟人像管理中上传注册" />
+      </div>
     </el-dialog>
 
     <!-- 视频预览 -->
@@ -352,6 +379,9 @@ const promptInputRef = ref(null)
 const showMentionPicker = ref(false)
 const pausedVideoUrl = ref('')
 const promptCursor = ref(0)
+const portraitManagerVisible = ref(false)
+const portraitManagerTab = ref('my')
+const portraitQuickPickerVisible = ref(false)
 
 const filterLabels = { all: '全部', processing: '进行中', succeeded: '已完成', failed: '失败' }
 
@@ -371,6 +401,36 @@ async function uploadPortraitImage(options) {
   } catch (error) {
     options.onError?.(error)
   }
+}
+
+function openPortraitManager() {
+  portraitManagerTab.value = 'my'
+  portraitManagerVisible.value = true
+  store.fetchMyPortraits()
+}
+
+async function registerAndSave(portrait) {
+  try {
+    await httpPost('/api/seedance/assets', { url: portrait.preview_url, name: portrait.title, asset_type: 'Image' })
+    store.fetchMyPortraits()
+  } catch (e) {
+    // asset may already be registered
+  }
+}
+
+function openPortraitQuickPicker() {
+  portraitQuickPickerVisible.value = true
+  store.fetchMyPortraits()
+}
+
+function quickSelectPortrait(p) {
+  if (store.activeMode === 'image_to_video_dual') {
+    store.imageToVideoDualParams.first_frame_url = p.asset_url
+    store.referenceAssetPreviews[p.asset_url] = { preview_url: p.preview_url, title: p.name }
+  } else {
+    store.selectPortrait(p)
+  }
+  portraitQuickPickerVisible.value = false
 }
 
 const currentResolution = computed({

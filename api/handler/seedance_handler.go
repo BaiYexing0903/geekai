@@ -12,6 +12,7 @@ import (
 	"geekai/store/vo"
 	"geekai/utils"
 	"geekai/utils/resp"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -40,6 +41,8 @@ func (h *SeedanceHandler) RegisterRoutes() {
 		group.POST("task", h.CreateTask)
 		group.POST("portraits", h.Portraits)
 		group.POST("assets", h.CreateAsset)
+		group.GET("my-portraits", h.MyPortraits)
+		group.GET("my-portraits/remove", h.RemoveMyPortrait)
 		group.GET("power-config", h.GetPowerConfig)
 		group.POST("jobs", h.Jobs)
 		group.GET("remove", h.Remove)
@@ -219,6 +222,7 @@ func (h *SeedanceHandler) CreateAsset(c *gin.Context) {
 		resp.ERROR(c, "上传人像仅支持图片素材")
 		return
 	}
+	userId := h.GetLoginUserId(c)
 	asset, err := h.seedanceService.CreateAsset(&seedance.CreateAssetReq{
 		URL:       req.URL,
 		AssetType: req.AssetType,
@@ -229,7 +233,20 @@ func (h *SeedanceHandler) CreateAsset(c *gin.Context) {
 		resp.ERROR(c, "注册人像素材失败")
 		return
 	}
-	resp.SUCCESS(c, normalizeSeedanceCreatedAsset(req, asset))
+	result := normalizeSeedanceCreatedAsset(req, asset)
+	// 保存到用户人像表
+	portrait := model.SeedancePortrait{
+		UserId:     userId,
+		AssetId:    result.ID,
+		AssetUrl:   result.AssetURL,
+		PreviewUrl: result.PreviewURL,
+		Name:       result.Name,
+		CreatedAt:  time.Now(),
+	}
+	if err := h.DB.Create(&portrait).Error; err != nil {
+		logger.Errorf("save seedance portrait failed: %v", err)
+	}
+	resp.SUCCESS(c, result)
 }
 
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {
@@ -589,4 +606,30 @@ func (h *SeedanceHandler) Retry(c *gin.Context) {
 	}
 
 	resp.SUCCESS(c, gin.H{"message": "重试任务已提交"})
+}
+
+func (h *SeedanceHandler) MyPortraits(c *gin.Context) {
+	userId := h.GetLoginUserId(c)
+	var portraits []model.SeedancePortrait
+	if err := h.DB.Where("user_id = ?", userId).Order("id DESC").Find(&portraits).Error; err != nil {
+		logger.Errorf("query seedance portraits failed: %v", err)
+		resp.ERROR(c, "获取人像列表失败")
+		return
+	}
+	resp.SUCCESS(c, portraits)
+}
+
+func (h *SeedanceHandler) RemoveMyPortrait(c *gin.Context) {
+	userId := h.GetLoginUserId(c)
+	id := h.GetInt(c, "id", 0)
+	if id == 0 {
+		resp.ERROR(c, "参数错误")
+		return
+	}
+	if err := h.DB.Where("id = ? AND user_id = ?", id, userId).Delete(&model.SeedancePortrait{}).Error; err != nil {
+		logger.Errorf("delete seedance portrait failed: %v", err)
+		resp.ERROR(c, "删除人像失败")
+		return
+	}
+	resp.SUCCESS(c, gin.H{})
 }

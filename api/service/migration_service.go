@@ -129,6 +129,7 @@ func (s *MigrationService) TableMigration() {
 	s.db.AutoMigrate(&model.Moderation{})
 	s.db.AutoMigrate(&model.AiDrawJob{})
 	s.db.AutoMigrate(&model.SeedanceJob{})
+	s.db.AutoMigrate(&model.SeedancePortrait{})
 
 	// 订单字段整理
 	if s.db.Migrator().HasColumn(&model.Order{}, "pay_type") {
