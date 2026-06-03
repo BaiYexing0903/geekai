@@ -196,10 +196,20 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     if (portraitList.value.length === 0) await fetchPortraits(1)
   }
 
+  const selectedPortraitPreview = ref(null)
+
   const selectPortrait = (portrait) => {
     const normalized = normalizePortraitAsset(portrait)
     const assetUrl = normalized.asset_url
     if (!assetUrl) return
+
+    if (activeMode.value === 'virtual_avatar') {
+      virtualAvatarParams.asset_id = normalized.asset_id
+      selectedPortraitPreview.value = { preview_url: normalized.preview_url, title: normalized.title }
+      portraitDialogVisible.value = false
+      return
+    }
+
     if ((multimodalRefParams.reference_urls || []).includes(assetUrl)) {
       showMessageError('已选择该虚拟人像')
       return
@@ -359,7 +369,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     portraitList, portraitTotal, portraitFilters, referenceAssetPreviews,
     modes, videoModels, currentModelConfig, isVeo, ratioOptions, veoRatioOptions, veoResolutionOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
-    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
+    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams, selectedPortraitPreview,
     currentMode, currentPowerCost,
     init, switchMode: (m) => { activeMode.value = m }, getModeName, getStatusText,
     fetchData, fetchPortraits, openPortraitDialog, selectPortrait, registerUploadedPortrait, submitTask, removeJob, retryTask, playVideo, cleanup,

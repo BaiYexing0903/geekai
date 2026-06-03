@@ -355,10 +355,20 @@ export const useSeedanceStore = defineStore('seedance', () => {
     if (portraitList.value.length === 0) await fetchPortraits(1)
   }
 
+  const selectedPortraitPreview = ref(null)
+
   const selectPortrait = (portrait) => {
     const normalized = normalizePortraitAsset(portrait)
     const assetUrl = normalized.asset_url
     if (!assetUrl) return
+
+    if (activeMode.value === 'virtual_avatar') {
+      virtualAvatarParams.asset_id = normalized.asset_id
+      selectedPortraitPreview.value = { preview_url: normalized.preview_url, title: normalized.title }
+      portraitDialogVisible.value = false
+      return
+    }
+
     if ((multimodalRefParams.reference_urls || []).includes(assetUrl)) {
       showMessageError('已选择该虚拟人像')
       return
@@ -423,6 +433,10 @@ export const useSeedanceStore = defineStore('seedance', () => {
         showMessageError('请上传首帧和尾帧图片')
         return
       }
+      if (activeMode.value === 'virtual_avatar' && !virtualAvatarParams.asset_id) {
+        showMessageError('请选择虚拟人像')
+        return
+      }
       const requestData = {
         task_type: activeMode.value,
         prompt: activeMode.value === 'multimodal_ref'
@@ -438,6 +452,9 @@ export const useSeedanceStore = defineStore('seedance', () => {
       if (activeMode.value === 'image_to_video_dual') {
         requestData.first_frame_url = imageToVideoDualParams.first_frame_url
         requestData.last_frame_url = imageToVideoDualParams.last_frame_url
+      }
+      if (activeMode.value === 'virtual_avatar') {
+        requestData.asset_id = virtualAvatarParams.asset_id
       }
       if (activeMode.value === 'multimodal_ref') {
         Object.assign(requestData, splitSeedanceReferenceUrls(referenceUrls))
@@ -548,7 +565,7 @@ export const useSeedanceStore = defineStore('seedance', () => {
     modes, videoModels, currentModelConfig, isVeo, resolutionOptions, ratioOptions, durationOptions,
     veoResolutionOptions, veoRatioOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
-    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
+    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams, selectedPortraitPreview,
     currentMode, currentPowerCost,
     init, switchMode, getModeName, getStatusText, fetchData, fetchPortraits, openPortraitDialog, selectPortrait, registerUploadedPortrait, submitTask,
     downloadFile, retryTask, removeJob, playVideo, cleanup,

@@ -73,6 +73,16 @@
             placeholder="上传首帧/尾帧图片，不上传则为文生视频"
             @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
           />
+          <template v-else-if="store.activeMode === 'virtual_avatar'">
+            <div v-if="store.selectedPortraitPreview" class="selected-portrait-card">
+              <img :src="store.selectedPortraitPreview.preview_url" class="portrait-preview-img" />
+              <div class="portrait-preview-info">
+                <span class="portrait-preview-title">{{ store.selectedPortraitPreview.title }}</span>
+                <van-button type="danger" size="small" plain @click="store.selectedPortraitPreview = null">移除</van-button>
+              </div>
+            </div>
+            <div v-else class="portrait-placeholder">请点击下方按钮选择虚拟人像</div>
+          </template>
           <template v-else-if="store.activeMode === 'image_to_video_dual'">
             <FileUpload
               v-model="store.imageToVideoDualParams.first_frame_url"
@@ -101,7 +111,7 @@
           />
         </div>
         <van-button
-          v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
+          v-if="!store.isVeo && (store.activeMode === 'multimodal_ref' || store.activeMode === 'virtual_avatar')"
           plain
           type="primary"
           class="portrait-picker-btn"
@@ -499,6 +509,36 @@ onUnmounted(() => store.cleanup())
 
 .portrait-picker-btn {
   width: auto;
+}
+.selected-portrait-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--van-border-color);
+  border-radius: 8px;
+  background: var(--van-background);
+}
+.portrait-preview-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.portrait-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.portrait-preview-title {
+  font-size: 13px;
+  color: var(--van-text-color);
+}
+.portrait-placeholder {
+  color: var(--van-text-color-3);
+  font-size: 13px;
+  line-height: 56px;
+  text-align: center;
 }
 .portrait-sheet {
   padding: 14px;
