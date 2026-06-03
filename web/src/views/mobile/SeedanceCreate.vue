@@ -40,11 +40,6 @@
         </div>
       </div>
 
-      <!-- 虚拟人像管理入口 -->
-      <div v-if="!store.isVeo" class="form-item">
-        <van-button size="small" plain type="primary" @click="openPortraitManager" block>虚拟人像管理</van-button>
-      </div>
-
       <!-- 提示词 -->
       <div class="form-item" v-if="store.activeMode !== 'image_to_video_first'">
         <div class="prompt-box">
@@ -106,11 +101,12 @@
           />
         </div>
         <van-button
-          v-if="!store.isVeo && (store.activeMode === 'multimodal_ref' || store.activeMode === 'image_to_video_dual')"
+          v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
           plain
           type="primary"
           class="portrait-picker-btn"
-          @click="openPortraitQuickPicker"
+          :loading="store.portraitLoading"
+          @click="store.openPortraitDialog"
         >
           选择虚拟人像
         </van-button>
@@ -185,33 +181,10 @@
       <video v-if="store.currentVideoUrl" :src="store.currentVideoUrl" controls autoplay style="width: 100%" />
     </van-dialog>
 
-    <!-- 虚拟人像管理弹窗 -->
-    <van-popup v-model:show="portraitManagerVisible" round position="bottom" :style="{ height: '82%' }">
+    <van-popup v-model:show="store.portraitDialogVisible" round position="bottom" :style="{ height: '82%' }">
       <div class="portrait-sheet">
-        <div class="portrait-title">虚拟人像管理</div>
-        <van-tabs v-model:active="portraitManagerTab">
-          <van-tab title="我的人像" name="my">
-            <van-loading v-if="store.myPortraitsLoading" />
-            <div v-else class="portrait-grid">
-              <div v-for="p in store.myPortraits" :key="p.id" class="portrait-card my-portrait-card">
-                <img :src="p.preview_url" alt="" />
-                <strong>{{ p.name || '未命名' }}</strong>
-                <van-button type="danger" size="mini" plain @click="store.removeMyPortrait(p.id)">删除</van-button>
-              </div>
-              <van-empty v-if="store.myPortraits.length === 0" description="暂无注册人像" />
-            </div>
-          </van-tab>
-          <van-tab title="上传注册" name="upload">
-            <div class="portrait-upload-mobile">
-              <van-uploader
-                :after-read="uploadPortraitImage"
-                accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif"
-                :max-size="30 * 1024 * 1024"
-              />
-              <p>上传后自动注册为虚拟人像素材</p>
-              <van-loading v-if="store.portraitUploadLoading">正在注册人像素材</van-loading>
-            </div>
-          </van-tab>
+        <div class="portrait-title">选择虚拟人像</div>
+        <van-tabs v-model:active="store.portraitActiveTab">
           <van-tab title="人像库" name="library">
             <div class="portrait-filters">
               <van-field v-model="store.portraitFilters.gender" placeholder="性别：女性/男性" @blur="store.fetchPortraits(1)" />
@@ -220,7 +193,7 @@
             </div>
             <van-loading v-if="store.portraitLoading" />
             <div v-else class="portrait-grid">
-              <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="registerAndSave(portrait)">
+              <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
                 <img :src="portrait.preview_url" alt="" />
                 <strong>{{ portrait.title }}</strong>
                 <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
@@ -228,22 +201,18 @@
               <van-empty v-if="store.portraitList.length === 0" description="没有找到虚拟人像" />
             </div>
           </van-tab>
+          <van-tab title="上传人像" name="upload">
+            <div class="portrait-upload-mobile">
+              <van-uploader
+                :after-read="uploadPortraitImage"
+                accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif"
+                :max-size="30 * 1024 * 1024"
+              />
+              <p>上传本地人像图片，系统会自动注册为 Seedance 素材。</p>
+              <van-loading v-if="store.portraitUploadLoading">正在注册人像素材</van-loading>
+            </div>
+          </van-tab>
         </van-tabs>
-      </div>
-    </van-popup>
-
-    <!-- 快速选择虚拟人像弹窗 -->
-    <van-popup v-model:show="portraitQuickPickerVisible" round position="bottom" :style="{ height: '60%' }">
-      <div class="portrait-sheet">
-        <div class="portrait-title">选择虚拟人像</div>
-        <van-loading v-if="store.myPortraitsLoading" />
-        <div v-else class="portrait-grid">
-          <button v-for="p in store.myPortraits" :key="p.id" type="button" class="portrait-card" @click="quickSelectPortrait(p)">
-            <img :src="p.preview_url" alt="" />
-            <strong>{{ p.name || '未命名' }}</strong>
-          </button>
-          <van-empty v-if="store.myPortraits.length === 0" description="暂无注册人像，请先到虚拟人像管理中上传" />
-        </div>
       </div>
     </van-popup>
 
@@ -287,9 +256,6 @@ const showMentionPicker = ref(false)
 const pausedVideoUrl = ref('')
 const promptFieldRef = ref(null)
 const promptCursor = ref(0)
-const portraitManagerVisible = ref(false)
-const portraitManagerTab = ref('my')
-const portraitQuickPickerVisible = ref(false)
 
 const modelColumns = computed(() => store.videoModels.map((model) => ({ text: model.label, value: model.value })))
 const selectedModelLabel = computed(() => store.currentModelConfig.label)
@@ -305,37 +271,6 @@ async function uploadPortraitImage(file) {
   const imageUrl = replaceImg(response.data.url)
   await store.registerUploadedPortrait(imageUrl, uploadFile.name.replace(/\.[^.]+$/, ''))
 }
-
-function openPortraitManager() {
-  portraitManagerTab.value = 'my'
-  portraitManagerVisible.value = true
-  store.fetchMyPortraits()
-}
-
-async function registerAndSave(portrait) {
-  try {
-    await httpPost('/api/seedance/assets', { url: portrait.preview_url, name: portrait.title, asset_type: 'Image' })
-    store.fetchMyPortraits()
-  } catch (e) {
-    // asset may already be registered
-  }
-}
-
-function openPortraitQuickPicker() {
-  portraitQuickPickerVisible.value = true
-  store.fetchMyPortraits()
-}
-
-function quickSelectPortrait(p) {
-  if (store.activeMode === 'image_to_video_dual') {
-    store.imageToVideoDualParams.first_frame_url = p.asset_url
-    store.referenceAssetPreviews[p.asset_url] = { preview_url: p.preview_url, title: p.name }
-  } else {
-    store.selectPortrait(p)
-  }
-  portraitQuickPickerVisible.value = false
-}
-
 const currentRatio = computed({
   get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,
   set: (value) => {

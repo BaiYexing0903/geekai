@@ -34,8 +34,6 @@ export const useSeedanceStore = defineStore('seedance', () => {
   const portraitTotal = ref(0)
   const portraitFilters = reactive({ page: 1, page_size: 24, gender: '', country: '', ages: [], occupation: '' })
   const referenceAssetPreviews = reactive({})
-  const myPortraits = ref([])
-  const myPortraitsLoading = ref(false)
 
   const shareStore = useSharedStore()
 
@@ -387,34 +385,11 @@ export const useSeedanceStore = defineStore('seedance', () => {
         name: response.data?.name || name,
       })
       selectPortrait(portrait)
-      showMessageOK('人像注册成功')
-      fetchMyPortraits()
+      showMessageOK('人像上传成功')
     } catch (error) {
       showMessageError(error.message || '人像上传失败')
     } finally {
       portraitUploadLoading.value = false
-    }
-  }
-
-  const fetchMyPortraits = async () => {
-    try {
-      myPortraitsLoading.value = true
-      const response = await httpGet('/api/seedance/my-portraits')
-      myPortraits.value = response.data || []
-    } catch (error) {
-      showMessageError(error.message || '获取人像列表失败')
-    } finally {
-      myPortraitsLoading.value = false
-    }
-  }
-
-  const removeMyPortrait = async (id) => {
-    try {
-      await httpGet('/api/seedance/my-portraits/remove', { id })
-      myPortraits.value = myPortraits.value.filter(p => p.id !== id)
-      showMessageOK('删除成功')
-    } catch (error) {
-      showMessageError(error.message || '删除失败')
     }
   }
 
@@ -573,9 +548,9 @@ export const useSeedanceStore = defineStore('seedance', () => {
     modes, videoModels, currentModelConfig, isVeo, resolutionOptions, ratioOptions, durationOptions,
     veoResolutionOptions, veoRatioOptions,
     textToVideoParams, imageToVideoFirstParams, imageToVideoDualParams,
-    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams, myPortraits, myPortraitsLoading,
+    multimodalRefParams, veoParams, editVideoParams, extendVideoParams, virtualAvatarParams,
     currentMode, currentPowerCost,
-    init, switchMode, getModeName, getStatusText, fetchData, fetchPortraits, openPortraitDialog, selectPortrait, registerUploadedPortrait, fetchMyPortraits, removeMyPortrait, submitTask,
+    init, switchMode, getModeName, getStatusText, fetchData, fetchPortraits, openPortraitDialog, selectPortrait, registerUploadedPortrait, submitTask,
     downloadFile, retryTask, removeJob, playVideo, cleanup,
     substr, replaceImg,
   }
