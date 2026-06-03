@@ -194,7 +194,8 @@
             <van-loading v-if="store.portraitLoading" />
             <div v-else class="portrait-grid">
               <button v-for="portrait in store.portraitList" :key="portrait.asset_id" type="button" class="portrait-card" @click="store.selectPortrait(portrait)">
-                <img :src="portrait.preview_url" alt="" />
+                <video v-if="isPortraitVideo(portrait)" :src="portrait.preview_url" muted preload="metadata" />
+                <img v-else :src="portrait.preview_url" alt="" />
                 <strong>{{ portrait.title }}</strong>
                 <span>{{ portrait.metadata?.gender }} · {{ portrait.metadata?.age }}岁 · {{ portrait.metadata?.country }}</span>
               </button>
@@ -246,7 +247,7 @@
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useSeedanceStore } from '@/store/mobile/seedance'
 import FileUpload from '@/components/FileUpload.vue'
-import { buildSeedanceMentionOptions } from '@/store/seedanceReferences'
+import { buildSeedanceMentionOptions, isSeedancePreviewVideo } from '@/store/seedanceReferences'
 import { httpPost } from '@/utils/http'
 import { replaceImg } from '@/utils/libs'
 
@@ -265,6 +266,10 @@ const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimod
 
 function getPortraitAssetType(file) {
   return file.type?.startsWith('video/') ? 'Video' : 'Image'
+}
+
+function isPortraitVideo(portrait) {
+  return isSeedancePreviewVideo(portrait)
 }
 
 async function uploadPortraitImage(file) {
@@ -530,11 +535,13 @@ onUnmounted(() => store.cleanup())
   padding: 8px;
   text-align: left;
 }
-.portrait-card img {
+.portrait-card img,
+.portrait-card video {
   width: 100%;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: 8px;
+  display: block;
 }
 .portrait-card strong,
 .portrait-card span {

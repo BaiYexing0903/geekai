@@ -119,6 +119,10 @@ export function normalizePortraitAsset(asset) {
   return normalized
 }
 
+export function isSeedancePreviewVideo(asset) {
+  return (asset?.asset_type || asset?.AssetType || '').toLowerCase() === 'video'
+}
+
 export function buildUploadedPortrait(url, name, assetType) {
   return {
     url,

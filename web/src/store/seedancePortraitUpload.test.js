@@ -1,5 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildUploadedPortrait, normalizePortraitAsset, waitForUploadedPortraitActive } from './seedanceReferences'
+import {
+  buildUploadedPortrait,
+  isSeedancePreviewVideo,
+  normalizePortraitAsset,
+  waitForUploadedPortraitActive,
+} from './seedanceReferences'
+
+describe('isSeedancePreviewVideo', () => {
+  it('uses asset type to identify Seedance video previews', () => {
+    expect(isSeedancePreviewVideo({ asset_type: 'Video', preview_url: 'https://cdn.example.com/person.mp4' })).toBe(true)
+    expect(isSeedancePreviewVideo({ asset_type: 'Image', preview_url: 'https://cdn.example.com/person.jpg' })).toBe(false)
+  })
+})
 
 describe('waitForUploadedPortraitActive', () => {
   it('polls Seedance asset status until the uploaded portrait is active', async () => {

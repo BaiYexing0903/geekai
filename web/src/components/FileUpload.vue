@@ -34,7 +34,10 @@
     <template v-else>
       <div v-if="fileList.length > 0" class="file-grid">
         <div v-for="(url, index) in fileList" :key="index" class="file-item">
-          <el-image v-if="isImage(url)" :src="previewUrl(url)" fit="cover" class="file-thumb" />
+          <template v-if="isVideoPreview(url)">
+            <video :src="previewUrl(url)" muted preload="metadata" class="file-thumb" />
+          </template>
+          <el-image v-else-if="isImage(url)" :src="previewUrl(url)" fit="cover" class="file-thumb" />
           <div v-else class="file-icon-wrap">
             <i :class="'iconfont icon-' + getFileIcon(url)" class="file-icon"></i>
             <span class="file-ext">{{ fileTitle(url) }}</span>
@@ -132,6 +135,7 @@ function getFileIconFromAccept(accept) {
 }
 
 function getFileIcon(url) {
+  if (isVideoPreview(url)) return 'video'
   if (props.previewMap[url]?.preview_url) return 'image'
   const ext = url.split('?')[0].split('.').pop().toLowerCase()
   if (['mp4', 'webm', 'mov', 'avi', 'mkv'].includes(ext)) return 'video'
@@ -140,9 +144,14 @@ function getFileIcon(url) {
 }
 
 function isImage(url) {
+  if (isVideoPreview(url)) return false
   if (props.previewMap[url]?.preview_url) return true
   const ext = url.split('?')[0].split('.').pop().toLowerCase()
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)
+}
+
+function isVideoPreview(url) {
+  return (props.previewMap[url]?.asset_type || '').toLowerCase() === 'video'
 }
 
 function previewUrl(url) {
@@ -342,6 +351,8 @@ function removeFile(index) {
 .file-thumb {
   width: 100%;
   height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .file-icon-wrap {
