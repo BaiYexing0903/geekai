@@ -95,7 +95,7 @@ func (c *Client) ListMediaAssetGroup(req *ListMediaAssetGroupReq) (*ListMediaAss
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal response failed: %w, body: %s", err, string(respBody))
 	}
-	if result.Code != "" && result.Code != "200" {
+	if result.Code != "" && result.Code != "0" && result.Code != "200" {
 		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
 	}
 	return &result, nil
@@ -115,7 +115,7 @@ func (c *Client) CreateAsset(req *CreateAssetReq) (*CreateAssetResp, error) {
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal response failed: %w, body: %s", err, string(respBody))
 	}
-	if result.Code != "" && result.Code != "200" {
+	if result.Code != "" && result.Code != "0" && result.Code != "200" {
 		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
 	}
 	if result.ID == "" {
@@ -148,7 +148,7 @@ func (c *Client) GetAsset(id string) (*CreateAssetResp, error) {
 	if err := json.Unmarshal(respBody, &result); err != nil {
 		return nil, fmt.Errorf("unmarshal response failed: %w, body: %s", err, string(respBody))
 	}
-	if result.Code != "" && result.Code != "200" {
+	if result.Code != "" && result.Code != "0" && result.Code != "200" {
 		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
 	}
 	return &result, nil

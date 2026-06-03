@@ -1,6 +1,10 @@
 package seedance
 
-import "geekai/store/model"
+import (
+	"encoding/json"
+	"fmt"
+	"geekai/store/model"
+)
 
 // --- Seedance REST API 请求/响应类型 ---
 
@@ -160,4 +164,46 @@ type CreateAssetResp struct {
 	Error     *TaskError `json:"Error,omitempty"`
 	Code      string     `json:"code,omitempty"`
 	Message   string     `json:"message,omitempty"`
+}
+
+func (r *CreateAssetResp) UnmarshalJSON(data []byte) error {
+	type alias CreateAssetResp
+	var raw struct {
+		alias
+		LowerID string          `json:"id"`
+		UpperID string          `json:"ID"`
+		Code    json.RawMessage `json:"code"`
+		Data    *alias          `json:"data"`
+		Result  *alias          `json:"Result"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	value := alias(raw.alias)
+	if raw.Data != nil {
+		value = *raw.Data
+	}
+	if raw.Result != nil {
+		value = *raw.Result
+	}
+	if value.ID == "" {
+		if raw.LowerID != "" {
+			value.ID = raw.LowerID
+		} else if raw.UpperID != "" {
+			value.ID = raw.UpperID
+		}
+	}
+	if len(raw.Code) > 0 {
+		var codeString string
+		if err := json.Unmarshal(raw.Code, &codeString); err == nil {
+			value.Code = codeString
+		} else {
+			var codeNumber float64
+			if err := json.Unmarshal(raw.Code, &codeNumber); err == nil {
+				value.Code = fmt.Sprintf("%g", codeNumber)
+			}
+		}
+	}
+	*r = CreateAssetResp(value)
+	return nil
 }
