@@ -32,6 +32,20 @@ describe('normalizePortraitAsset', () => {
       metadata: {},
     })
   })
+
+  it('normalizes Seedance API asset fields without using the real image URL as asset URL', () => {
+    expect(normalizePortraitAsset({
+      Id: 'asset-uploaded-api',
+      URL: 'https://cdn.example.com/real-person.jpg',
+      Name: '接口人像',
+    })).toEqual({
+      asset_id: 'asset-uploaded-api',
+      asset_url: 'asset://asset-uploaded-api',
+      preview_url: 'https://cdn.example.com/real-person.jpg',
+      title: '接口人像',
+      metadata: {},
+    })
+  })
 })
 
 describe('buildUploadedPortrait', () => {

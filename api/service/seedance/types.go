@@ -151,7 +151,13 @@ type CreateAssetReq struct {
 }
 
 type CreateAssetResp struct {
-	ID      string `json:"Id"`
-	Code    string `json:"code,omitempty"`
-	Message string `json:"message,omitempty"`
+	ID        string     `json:"Id"`
+	Name      string     `json:"Name,omitempty"`
+	URL       string     `json:"URL,omitempty"`
+	AssetType string     `json:"AssetType,omitempty"`
+	GroupID   string     `json:"GroupId,omitempty"`
+	Status    string     `json:"Status,omitempty"`
+	Error     *TaskError `json:"Error,omitempty"`
+	Code      string     `json:"code,omitempty"`
+	Message   string     `json:"message,omitempty"`
 }

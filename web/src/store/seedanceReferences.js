@@ -98,13 +98,14 @@ export function transformSeedancePromptMentions(prompt, urls) {
 }
 
 export function normalizePortraitAsset(asset) {
-  const assetId = asset.asset_id || asset.id || ''
-  const assetUrl = asset.asset_url || asset.url || (assetId ? `asset://${assetId}` : '')
+  const assetId = asset.asset_id || asset.id || asset.Id || asset.AssetID || ''
+  const rawAssetUrl = asset.asset_url || asset.url || asset.URL || ''
+  const assetUrl = rawAssetUrl.startsWith('asset://') ? rawAssetUrl : (assetId ? `asset://${assetId}` : '')
   return {
     asset_id: assetId,
     asset_url: assetUrl,
-    preview_url: asset.preview_url || '',
-    title: asset.title || asset.name || '上传人像',
+    preview_url: asset.preview_url || asset.URL || '',
+    title: asset.title || asset.name || asset.Name || '上传人像',
     metadata: asset.metadata || {},
   }
 }

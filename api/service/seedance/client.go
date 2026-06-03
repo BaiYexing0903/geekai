@@ -118,6 +118,33 @@ func (c *Client) CreateAsset(req *CreateAssetReq) (*CreateAssetResp, error) {
 	if result.Code != "" && result.Code != "200" {
 		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
 	}
+	if result.ID == "" || result.URL != "" {
+		return &result, nil
+	}
+	asset, err := c.GetAsset(result.ID)
+	if err != nil {
+		return nil, err
+	}
+	return asset, nil
+}
+
+func (c *Client) GetAsset(id string) (*CreateAssetResp, error) {
+	body, err := json.Marshal(map[string]string{"Id": id})
+	if err != nil {
+		return nil, fmt.Errorf("marshal request failed: %w", err)
+	}
+	url := c.config.ApiURL + "/open/GetAsset"
+	respBody, err := c.doPost(url, body)
+	if err != nil {
+		return nil, err
+	}
+	var result CreateAssetResp
+	if err := json.Unmarshal(respBody, &result); err != nil {
+		return nil, fmt.Errorf("unmarshal response failed: %w, body: %s", err, string(respBody))
+	}
+	if result.Code != "" && result.Code != "200" {
+		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
+	}
 	return &result, nil
 }
 

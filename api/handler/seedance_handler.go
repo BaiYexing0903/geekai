@@ -130,14 +130,22 @@ func normalizeSeedancePortraits(apiResp *seedance.ListMediaAssetGroupResp) Seeda
 		})
 	}
 	return result
+	previewURL := asset.URL
+	if previewURL == "" {
+		previewURL = req.URL
+	}
+	name := asset.Name
+	if name == "" {
+		name = req.Name
+	}
 }
 
 func normalizeSeedanceCreatedAsset(req SeedanceCreateAssetRequest, asset *seedance.CreateAssetResp) SeedanceCreateAssetResponse {
 	return SeedanceCreateAssetResponse{
 		ID:         asset.ID,
 		AssetURL:   "asset://" + asset.ID,
-		PreviewURL: req.URL,
-		Name:       req.Name,
+		PreviewURL: previewURL,
+		Name:       name,
 	}
 }
 
