@@ -56,4 +56,20 @@ describe('buildUploadedPortrait', () => {
       asset_type: 'Image',
     })
   })
+
+  it('builds the request body for Seedance video asset registration', () => {
+    expect(buildUploadedPortrait('https://cdn.example.com/me.mp4', '我的视频人像')).toEqual({
+      url: 'https://cdn.example.com/me.mp4',
+      name: '我的视频人像',
+      asset_type: 'Video',
+    })
+  })
+
+  it('keeps explicit asset type when registering a portrait asset', () => {
+    expect(buildUploadedPortrait('https://cdn.example.com/me.jpg', '我的人像', 'Video')).toEqual({
+      url: 'https://cdn.example.com/me.jpg',
+      name: '我的人像',
+      asset_type: 'Video',
+    })
+  })
 })

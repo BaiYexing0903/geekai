@@ -296,12 +296,12 @@
             drag
             :show-file-list="false"
             :http-request="uploadPortraitImage"
-            accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif"
+            accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif,video/mp4,video/quicktime"
             class="portrait-upload"
           >
             <el-icon :size="28"><UploadFilled /></el-icon>
-            <div class="upload-text">拖拽人像图片到此处，或点击上传</div>
-            <div class="upload-tip">支持 jpeg、png、webp、bmp、tiff、gif、heic/heif，单张小于 30MB</div>
+            <div class="upload-text">拖拽人像图片或视频到此处，或点击上传</div>
+            <div class="upload-tip">图片小于 30MB；视频支持 mp4、mov，小于 50MB</div>
           </el-upload>
           <el-alert
             v-if="store.portraitUploadLoading"
@@ -359,14 +359,18 @@ const currentResolutionOptions = computed(() => store.isVeo ? store.veoResolutio
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
 const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || [], store.referenceAssetPreviews))
 
+function getPortraitAssetType(file) {
+  return file.type?.startsWith('video/') ? 'Video' : 'Image'
+}
+
 async function uploadPortraitImage(options) {
   const file = options.file
   const formData = new FormData()
   formData.append('file', file)
   try {
     const response = await httpPost('/api/upload', formData)
-    const imageUrl = replaceImg(response.data.url)
-    await store.registerUploadedPortrait(imageUrl, file.name.replace(/\.[^.]+$/, ''))
+    const assetUrl = replaceImg(response.data.url)
+    await store.registerUploadedPortrait(assetUrl, file.name.replace(/\.[^.]+$/, ''), getPortraitAssetType(file))
     options.onSuccess?.({})
   } catch (error) {
     options.onError?.(error)

@@ -134,6 +134,24 @@ func TestSeedanceStatusFilterMapsUiFiltersToJobStatuses(t *testing.T) {
 	}
 }
 
+func TestNormalizeSeedanceCreatedAssetIncludesReviewFields(t *testing.T) {
+	got := normalizeSeedanceCreatedAsset(SeedanceCreateAssetRequest{
+		URL:       "https://example.com/person.mp4",
+		Name:      "测试视频人像",
+		AssetType: "Video",
+	}, &seedance.CreateAssetResp{ID: "asset-video", GroupID: "group-abc", Status: "Processing", AssetType: "Video", Error: &seedance.TaskError{Code: "Reviewing", Message: "审核中"}})
+
+	if got.ID != "asset-video" || got.AssetURL != "asset://asset-video" {
+		t.Fatalf("unexpected asset id/url: %+v", got)
+	}
+	if got.Status != "Processing" || got.AssetType != "Video" || got.GroupID != "group-abc" {
+		t.Fatalf("expected review fields, got %+v", got)
+	}
+	if got.Error == nil || got.Error.Message != "审核中" {
+		t.Fatalf("expected error details, got %+v", got.Error)
+	}
+}
+
 func TestNormalizeSeedanceCreatedAsset(t *testing.T) {
 	got := normalizeSeedanceCreatedAsset(SeedanceCreateAssetRequest{
 		URL:  "https://example.com/person.jpg",

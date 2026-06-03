@@ -9,12 +9,12 @@ import (
 // --- Seedance REST API 请求/响应类型 ---
 
 type ContentItem struct {
-	Type     string          `json:"type"`
-	Text     string          `json:"text,omitempty"`
-	ImageURL *URLField       `json:"image_url,omitempty"`
-	VideoURL *URLField       `json:"video_url,omitempty"`
-	AudioURL *URLField       `json:"audio_url,omitempty"`
-	Role     string          `json:"role,omitempty"`
+	Type     string    `json:"type"`
+	Text     string    `json:"text,omitempty"`
+	ImageURL *URLField `json:"image_url,omitempty"`
+	VideoURL *URLField `json:"video_url,omitempty"`
+	AudioURL *URLField `json:"audio_url,omitempty"`
+	Role     string    `json:"role,omitempty"`
 }
 
 type URLField struct {
@@ -152,6 +152,7 @@ type CreateAssetReq struct {
 	URL       string `json:"URL"`
 	AssetType string `json:"AssetType"`
 	Name      string `json:"Name,omitempty"`
+	GroupID   string `json:"GroupId,omitempty"`
 }
 
 type CreateAssetResp struct {

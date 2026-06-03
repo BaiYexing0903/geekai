@@ -212,19 +212,25 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
     referenceAssetPreviews[assetUrl] = {
       preview_url: normalized.preview_url,
       title: normalized.title,
+      asset_type: normalized.asset_type,
+      status: normalized.status,
     }
     portraitDialogVisible.value = false
   }
 
-  const registerUploadedPortrait = async (imageUrl, name = '上传人像') => {
+  const registerUploadedPortrait = async (imageUrl, name = '上传人像', assetType) => {
     try {
       portraitUploadLoading.value = true
-      const response = await httpPost('/api/seedance/assets', buildUploadedPortrait(imageUrl, name))
+      const response = await httpPost('/api/seedance/assets', buildUploadedPortrait(imageUrl, name, assetType))
       const portrait = normalizePortraitAsset({
         ...(response.data || {}),
         preview_url: response.data?.preview_url || imageUrl,
         name: response.data?.name || name,
       })
+      if (portrait.status && portrait.status !== 'Active') {
+        showMessageOK('素材已提交审核，审核通过后可用于生成')
+        return
+      }
       selectPortrait(portrait)
       showMessageOK('人像上传成功')
     } catch (error) {
@@ -266,7 +272,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
       const req = {
         task_type: activeMode.value,
         prompt: activeMode.value === 'multimodal_ref'
-          ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls)
+          ? transformSeedancePromptMentions(currentPrompt.value, referenceUrls, referenceAssetPreviews)
           : currentPrompt.value,
         model: p.model,
         resolution: p.resolution,
@@ -282,7 +288,7 @@ export const useSeedanceStore = defineStore('mobile-seedance', () => {
         req.last_frame_url = imageToVideoDualParams.last_frame_url
       }
       if (activeMode.value === 'multimodal_ref') {
-        Object.assign(req, splitSeedanceReferenceUrls(referenceUrls))
+        Object.assign(req, splitSeedanceReferenceUrls(referenceUrls, referenceAssetPreviews))
       }
       if (activeMode.value === 'edit_video') {
         req.ref_video_url = editVideoParams.ref_video_url

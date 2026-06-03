@@ -205,10 +205,10 @@
             <div class="portrait-upload-mobile">
               <van-uploader
                 :after-read="uploadPortraitImage"
-                accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif"
-                :max-size="30 * 1024 * 1024"
+                accept="image/jpeg,image/png,image/webp,image/bmp,image/tiff,image/gif,image/heic,image/heif,video/mp4,video/quicktime"
+                :max-size="50 * 1024 * 1024"
               />
-              <p>上传本地人像图片，系统会自动注册为 Seedance 素材。</p>
+              <p>上传本地人像图片或视频，系统会自动提交 Seedance 素材审核。</p>
               <van-loading v-if="store.portraitUploadLoading">正在注册人像素材</van-loading>
             </div>
           </van-tab>
@@ -263,13 +263,17 @@ const selectedModelLabel = computed(() => store.currentModelConfig.label)
 const currentRatioOptions = computed(() => store.isVeo ? store.veoRatioOptions : store.ratioOptions)
 const mentionOptions = computed(() => buildSeedanceMentionOptions(store.multimodalRefParams.reference_urls || [], store.referenceAssetPreviews))
 
+function getPortraitAssetType(file) {
+  return file.type?.startsWith('video/') ? 'Video' : 'Image'
+}
+
 async function uploadPortraitImage(file) {
   const uploadFile = file.file || file
   const formData = new FormData()
   formData.append('file', uploadFile)
   const response = await httpPost('/api/upload', formData)
-  const imageUrl = replaceImg(response.data.url)
-  await store.registerUploadedPortrait(imageUrl, uploadFile.name.replace(/\.[^.]+$/, ''))
+  const assetUrl = replaceImg(response.data.url)
+  await store.registerUploadedPortrait(assetUrl, uploadFile.name.replace(/\.[^.]+$/, ''), getPortraitAssetType(uploadFile))
 }
 const currentRatio = computed({
   get: () => store.isVeo ? store.veoParams.aspect_ratio : getParams().ratio,

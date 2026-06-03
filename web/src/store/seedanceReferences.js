@@ -20,14 +20,14 @@ function isSeedanceAssetUrl(url) {
   return /^asset:\/\/asset-/.test(url)
 }
 
-function getReferenceType(url) {
-  if (isSeedanceAssetUrl(url)) return 'image'
+function getReferenceType(url, preview) {
+  if (isSeedanceAssetUrl(url)) return preview?.asset_type?.toLowerCase() || 'image'
   return getMediaType(getUrlExt(url))
 }
 
-export function splitSeedanceReferenceUrls(urls) {
+export function splitSeedanceReferenceUrls(urls, previewMap = {}) {
   return urls.reduce((result, url) => {
-    const type = getReferenceType(url)
+    const type = getReferenceType(url, previewMap[url])
     if (type === 'image') result.image_urls.push(url)
     if (type === 'video') result.video_urls.push(url)
     if (type === 'audio') result.audio_urls.push(url)
@@ -46,13 +46,13 @@ export function buildSeedanceMentionOptions(urls, previewMap = {}) {
   const counters = { image: 0, video: 0, audio: 0 }
 
   return urls.reduce((options, url) => {
-    const type = getReferenceType(url)
+    const preview = previewMap[url]
+    const type = getReferenceType(url, preview)
     if (!type) return options
 
     counters[type] += 1
     const index = counters[type]
     const config = mentionConfig[type]
-    const preview = previewMap[url]
 
     options.push({
       label: `@${config.label}${index}`,
@@ -68,8 +68,8 @@ export function buildSeedanceMentionOptions(urls, previewMap = {}) {
   }, [])
 }
 
-export function transformSeedancePromptMentions(prompt, urls) {
-  const mentionOptions = buildSeedanceMentionOptions(urls)
+export function transformSeedancePromptMentions(prompt, urls, previewMap = {}) {
+  const mentionOptions = buildSeedanceMentionOptions(urls, previewMap)
   if (!mentionOptions.length) return prompt
 
   const optionMap = new Map(mentionOptions.map(option => [option.label, option]))
@@ -101,19 +101,28 @@ export function normalizePortraitAsset(asset) {
   const assetId = asset.asset_id || asset.id || asset.Id || asset.AssetID || ''
   const rawAssetUrl = asset.asset_url || asset.url || asset.URL || ''
   const assetUrl = rawAssetUrl.startsWith('asset://') ? rawAssetUrl : (assetId ? `asset://${assetId}` : '')
-  return {
+  const normalized = {
     asset_id: assetId,
     asset_url: assetUrl,
     preview_url: asset.preview_url || asset.URL || '',
     title: asset.title || asset.name || asset.Name || '上传人像',
     metadata: asset.metadata || {},
   }
+  const assetType = asset.asset_type || asset.AssetType
+  const groupId = asset.group_id || asset.GroupId
+  const status = asset.status || asset.Status
+  const error = asset.error || asset.Error
+  if (assetType) normalized.asset_type = assetType
+  if (groupId) normalized.group_id = groupId
+  if (status) normalized.status = status
+  if (error) normalized.error = error
+  return normalized
 }
 
-export function buildUploadedPortrait(url, name) {
+export function buildUploadedPortrait(url, name, assetType) {
   return {
     url,
     name,
-    asset_type: 'Image',
+    asset_type: assetType || (getMediaType(getUrlExt(url)) === 'video' ? 'Video' : 'Image'),
   }
 }
