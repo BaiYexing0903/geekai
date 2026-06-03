@@ -118,12 +118,18 @@ func (c *Client) CreateAsset(req *CreateAssetReq) (*CreateAssetResp, error) {
 	if result.Code != "" && result.Code != "200" {
 		return nil, fmt.Errorf("API error: code=%s, message=%s", result.Code, result.Message)
 	}
-	if result.ID == "" || result.URL != "" {
+	if result.ID == "" {
+		return nil, fmt.Errorf("create asset response missing Id: %s", string(respBody))
+	}
+	if result.URL != "" {
 		return &result, nil
 	}
 	asset, err := c.GetAsset(result.ID)
 	if err != nil {
 		return nil, err
+	}
+	if asset.ID == "" {
+		return nil, fmt.Errorf("get asset response missing Id")
 	}
 	return asset, nil
 }

@@ -15,6 +15,24 @@ func (fn roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return fn(req)
 }
 
+func TestClientCreateAssetReturnsErrorWhenCreateResponseMissingID(t *testing.T) {
+	client := &Client{
+		config: types.SeedanceConfig{ApiURL: "https://seedance.example.com", BearerToken: "token"},
+		httpClient: &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString(`{"Name":"测试人像"}`)),
+				Header:     make(http.Header),
+			}, nil
+		})},
+	}
+
+	got, err := client.CreateAsset(&CreateAssetReq{URL: "https://cdn.example.com/person.jpg", AssetType: "Image", Name: "测试人像"})
+	if err == nil {
+		t.Fatalf("expected CreateAsset to fail when Id is missing, got asset: %+v", got)
+	}
+}
+
 func TestClientCreateAssetFetchesAssetWhenCreateOnlyReturnsID(t *testing.T) {
 	calls := []string{}
 	client := &Client{

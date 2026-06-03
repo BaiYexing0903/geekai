@@ -241,6 +241,11 @@ func (h *SeedanceHandler) CreateAsset(c *gin.Context) {
 		resp.ERROR(c, "注册人像素材失败")
 		return
 	}
+	if asset.ID == "" {
+		logger.Errorf("create seedance asset returned empty id")
+		resp.ERROR(c, "注册人像素材失败")
+		return
+	}
 	result := normalizeSeedanceCreatedAsset(req, asset)
 	// 保存到用户人像表
 	portrait := model.SeedancePortrait{
