@@ -98,6 +98,10 @@ func (s *Service) CreateAsset(req *CreateAssetReq) (*CreateAssetResp, error) {
 	return s.client.CreateAsset(req)
 }
 
+func (s *Service) GetAsset(id string) (*CreateAssetResp, error) {
+	return s.client.GetAsset(id)
+}
+
 func (s *Service) CreateTask(userId uint, req *CreateJobReq) (*model.SeedanceJob, error) {
 	taskParams := map[string]any{
 		"content":        req.Content,

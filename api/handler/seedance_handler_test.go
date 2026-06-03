@@ -152,6 +152,17 @@ func TestNormalizeSeedanceCreatedAssetIncludesReviewFields(t *testing.T) {
 	}
 }
 
+func TestNormalizeSeedanceQueriedAssetIncludesPreviewFallback(t *testing.T) {
+	got := normalizeSeedanceQueriedAsset("https://example.com/person.mp4", &seedance.CreateAssetResp{ID: "asset-video", GroupID: "group-abc", Status: "Active", AssetType: "Video"})
+
+	if got.ID != "asset-video" || got.AssetURL != "asset://asset-video" {
+		t.Fatalf("unexpected asset id/url: %+v", got)
+	}
+	if got.PreviewURL != "https://example.com/person.mp4" || got.Status != "Active" || got.AssetType != "Video" || got.GroupID != "group-abc" {
+		t.Fatalf("unexpected queried asset: %+v", got)
+	}
+}
+
 func TestNormalizeSeedanceCreatedAsset(t *testing.T) {
 	got := normalizeSeedanceCreatedAsset(SeedanceCreateAssetRequest{
 		URL:  "https://example.com/person.jpg",

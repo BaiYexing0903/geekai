@@ -7,7 +7,7 @@ import { ElMessageBox } from 'element-plus'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import { seedanceModes } from './seedanceModes'
-import { buildUploadedPortrait, normalizePortraitAsset, splitSeedanceReferenceUrls, transformSeedancePromptMentions } from './seedanceReferences'
+import { buildUploadedPortrait, normalizePortraitAsset, splitSeedanceReferenceUrls, transformSeedancePromptMentions, waitForUploadedPortraitActive } from './seedanceReferences'
 
 export const useSeedanceStore = defineStore('seedance', () => {
   const activeMode = ref('multimodal_ref')
@@ -377,6 +377,14 @@ export const useSeedanceStore = defineStore('seedance', () => {
     portraitDialogVisible.value = false
   }
 
+  const queryUploadedPortrait = async (portrait) => {
+    const response = await httpGet('/api/seedance/assets/status', {
+      id: portrait.asset_id,
+      preview_url: portrait.preview_url,
+    })
+    return response.data || {}
+  }
+
   const registerUploadedPortrait = async (imageUrl, name = '上传人像', assetType) => {
     try {
       portraitUploadLoading.value = true
@@ -386,11 +394,16 @@ export const useSeedanceStore = defineStore('seedance', () => {
         preview_url: response.data?.preview_url || imageUrl,
         name: response.data?.name || name,
       })
-      if (portrait.status && portrait.status !== 'Active') {
-        showMessageOK('素材已提交审核，审核通过后可用于生成')
+      const activePortrait = await waitForUploadedPortraitActive(queryUploadedPortrait, portrait)
+      if (activePortrait.status === 'Failed') {
+        showMessageError(activePortrait.error?.message || '人像素材审核失败')
         return
       }
-      selectPortrait(portrait)
+      if (activePortrait.status && activePortrait.status !== 'Active') {
+        showMessageOK('素材仍在审核中，审核通过后可用于生成')
+        return
+      }
+      selectPortrait(activePortrait)
       showMessageOK('人像上传成功')
     } catch (error) {
       showMessageError(error.message || '人像上传失败')

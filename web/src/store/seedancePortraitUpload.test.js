@@ -1,5 +1,38 @@
-import { describe, expect, it } from 'vitest'
-import { buildUploadedPortrait, normalizePortraitAsset } from './seedanceReferences'
+import { describe, expect, it, vi } from 'vitest'
+import { buildUploadedPortrait, normalizePortraitAsset, waitForUploadedPortraitActive } from './seedanceReferences'
+
+describe('waitForUploadedPortraitActive', () => {
+  it('polls Seedance asset status until the uploaded portrait is active', async () => {
+    vi.useFakeTimers()
+    const fetchAsset = vi.fn().mockResolvedValue({
+      id: 'asset-uploaded',
+      status: 'Active',
+      asset_type: 'Video',
+    })
+    const waiting = waitForUploadedPortraitActive(fetchAsset, {
+      asset_id: 'asset-uploaded',
+      asset_url: 'asset://asset-uploaded',
+      preview_url: 'https://cdn.example.com/me.mp4',
+      title: '我的视频人像',
+      metadata: {},
+      status: 'Processing',
+      asset_type: 'Video',
+    }, { maxAttempts: 2, interval: 1000 })
+
+    await vi.advanceTimersByTimeAsync(1000)
+    await expect(waiting).resolves.toEqual({
+      asset_id: 'asset-uploaded',
+      asset_url: 'asset://asset-uploaded',
+      preview_url: 'https://cdn.example.com/me.mp4',
+      title: '我的视频人像',
+      metadata: {},
+      status: 'Active',
+      asset_type: 'Video',
+    })
+    expect(fetchAsset).toHaveBeenCalledOnce()
+    vi.useRealTimers()
+  })
+})
 
 describe('normalizePortraitAsset', () => {
   it('normalizes public portrait assets', () => {

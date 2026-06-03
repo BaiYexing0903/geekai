@@ -40,6 +40,7 @@ func (h *SeedanceHandler) RegisterRoutes() {
 		group.POST("task", h.CreateTask)
 		group.POST("portraits", h.Portraits)
 		group.POST("assets", h.CreateAsset)
+		group.GET("assets/status", h.GetAsset)
 		group.GET("power-config", h.GetPowerConfig)
 		group.POST("jobs", h.Jobs)
 		group.GET("remove", h.Remove)
@@ -155,6 +156,19 @@ func normalizeSeedanceCreatedAsset(req SeedanceCreateAssetRequest, asset *seedan
 	}
 }
 
+func normalizeSeedanceQueriedAsset(previewURL string, asset *seedance.CreateAssetResp) SeedanceCreateAssetResponse {
+	return SeedanceCreateAssetResponse{
+		ID:         asset.ID,
+		AssetURL:   "asset://" + asset.ID,
+		PreviewURL: previewURL,
+		Name:       asset.Name,
+		AssetType:  asset.AssetType,
+		GroupID:    asset.GroupID,
+		Status:     asset.Status,
+		Error:      asset.Error,
+	}
+}
+
 func buildSeedancePortraitFilters(req SeedancePortraitListRequest) []seedance.MediaAssetFilter {
 	filters := []seedance.MediaAssetFilter{
 		{Field: "metadata.type", Op: "must", Conds: seedance.MediaAssetConds{StrValues: []string{"portrait"}}},
@@ -253,6 +267,26 @@ func (h *SeedanceHandler) CreateAsset(c *gin.Context) {
 		return
 	}
 	resp.SUCCESS(c, normalizeSeedanceCreatedAsset(req, asset))
+}
+
+func (h *SeedanceHandler) GetAsset(c *gin.Context) {
+	id := c.Query("id")
+	if id == "" {
+		resp.ERROR(c, types.InvalidArgs)
+		return
+	}
+	asset, err := h.seedanceService.GetAsset(id)
+	if err != nil {
+		logger.Errorf("get seedance asset failed: %v", err)
+		resp.ERROR(c, "查询人像素材失败")
+		return
+	}
+	if asset.ID == "" {
+		logger.Errorf("get seedance asset returned empty id: %s", id)
+		resp.ERROR(c, "查询人像素材失败")
+		return
+	}
+	resp.SUCCESS(c, normalizeSeedanceQueriedAsset(c.Query("preview_url"), asset))
 }
 
 func (h *SeedanceHandler) CreateTask(c *gin.Context) {

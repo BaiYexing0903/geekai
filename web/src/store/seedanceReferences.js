@@ -126,3 +126,20 @@ export function buildUploadedPortrait(url, name, assetType) {
     asset_type: assetType || (getMediaType(getUrlExt(url)) === 'video' ? 'Video' : 'Image'),
   }
 }
+
+export async function waitForUploadedPortraitActive(fetchAsset, portrait, options = {}) {
+  const maxAttempts = options.maxAttempts || 20
+  const interval = options.interval || 3000
+  let current = portrait
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (current.status === 'Active' || !current.status) return current
+    if (current.status === 'Failed') return current
+    if (attempt < maxAttempts - 1) {
+      await new Promise(resolve => setTimeout(resolve, interval))
+      current = normalizePortraitAsset({ ...current, ...(await fetchAsset(current)) })
+    }
+  }
+
+  return current
+}
