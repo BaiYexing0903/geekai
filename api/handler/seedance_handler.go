@@ -159,7 +159,7 @@ func buildSeedancePortraitFilters(req SeedancePortraitListRequest) []seedance.Me
 
 func isSeedanceTaskTypeAllowed(taskType string) bool {
 	switch taskType {
-	case string(model.SDModeMultimodalRef), string(model.SDModeImageToVideoDual), string(model.SDModeVirtualAvatar):
+	case string(model.SDModeMultimodalRef), string(model.SDModeImageToVideoDual):
 		return true
 	default:
 		return false

@@ -97,16 +97,6 @@
               tip="不上传图片：文生视频；上传首帧：图生视频；上传首帧和尾帧：首尾帧视频"
               @picker-open="pauseVideoPreview" @picker-close="resumeVideoPreview"
             />
-            <template v-else-if="store.activeMode === 'virtual_avatar'">
-              <div v-if="store.selectedPortraitPreview" class="selected-portrait-card">
-                <img :src="store.selectedPortraitPreview.preview_url" class="portrait-preview-img" />
-                <div class="portrait-preview-info">
-                  <span class="portrait-preview-title">{{ store.selectedPortraitPreview.title }}</span>
-                  <el-button type="danger" size="small" text @click="store.selectedPortraitPreview = null">移除</el-button>
-                </div>
-              </div>
-              <div v-else class="portrait-placeholder">请点击右侧按钮选择虚拟人像</div>
-            </template>
             <template v-else-if="store.activeMode === 'image_to_video_dual'">
               <FileUpload
                 v-model="store.imageToVideoDualParams.first_frame_url"
@@ -136,7 +126,7 @@
             />
           </div>
           <el-button
-            v-if="!store.isVeo && (store.activeMode === 'multimodal_ref' || store.activeMode === 'virtual_avatar')"
+            v-if="!store.isVeo && store.activeMode === 'multimodal_ref'"
             class="portrait-picker-btn"
             :loading="store.portraitLoading"
             @click="store.openPortraitDialog"
@@ -622,40 +612,6 @@ onUnmounted(() => store.cleanup())
 
 .portrait-picker-btn {
   flex: 0 0 auto;
-}
-
-.selected-portrait-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 8px;
-  background: var(--el-fill-color-light);
-}
-
-.portrait-preview-img {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.portrait-preview-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.portrait-preview-title {
-  font-size: 14px;
-  color: var(--el-text-color-primary);
-}
-
-.portrait-placeholder {
-  color: var(--el-text-color-placeholder);
-  font-size: 14px;
-  line-height: 64px;
 }
 
 .portrait-filters {
